@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>태웅 제조AI 시스템 - 단조/열처리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-base:       #0f1729;
+      --bg-card:       #1a2744;
+      --bg-card-hover: #1f2f52;
+      --bg-sidebar:    #111e38;
+      --bg-header:     #13203d;
+      --border:        #243459;
+      --accent:        #00d4ff;
+      --accent-dim:    rgba(0,212,255,0.12);
+      --warn:          #ff6b35;
+      --warn-dim:      rgba(255,107,53,0.15);
+      --danger:        #ff3b3b;
+      --danger-dim:    rgba(255,59,59,0.15);
+      --success:       #00d68f;
+      --success-dim:   rgba(0,214,143,0.15);
+      --text-primary:  #e8edf8;
+      --text-secondary:#8fa3c7;
+      --text-muted:    #4d6080;
+      --sidebar-w:     240px;
+      --header-h:      60px;
+      --radius-sm:     6px;
+      --radius-md:     10px;
+      --radius-lg:     14px;
+      --shadow-card:   0 4px 24px rgba(0,0,0,0.4);
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      min-width: 1280px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .app-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 20px 0 0; z-index: 100;
+    }
+    .header-logo {
+      width: var(--sidebar-w); display: flex; align-items: center;
+      gap: 10px; padding: 0 20px; border-right: 1px solid var(--border);
+      height: 100%; flex-shrink: 0;
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), #0090b8);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff;
+    }
+    .logo-text { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+    .logo-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .header-nav { flex: 1; display: flex; align-items: center; padding-left: 24px; gap: 4px; }
+    .header-time { font-size: 13px; color: var(--accent); font-weight: 600; font-feature-settings: "tnum"; margin-right: 16px; }
+    .header-badge { background: var(--warn-dim); border: 1px solid var(--warn); color: var(--warn); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .app-body { display: flex; margin-top: var(--header-h); flex: 1; }
+    .sidebar {
+      position: fixed; top: var(--header-h); left: 0; bottom: 0;
+      width: var(--sidebar-w); background: var(--bg-sidebar);
+      border-right: 1px solid var(--border); overflow-y: auto; padding: 12px 0;
+    }
+    .nav-group { margin-bottom: 4px; }
+    .nav-group-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 16px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px; cursor: pointer; color: var(--text-secondary);
+      font-size: 13px; border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .nav-item:hover { background: rgba(0,212,255,0.05); color: var(--text-primary); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 24px; min-height: calc(100vh - var(--header-h)); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 20px; font-weight: 700; }
+    .page-title span { color: var(--accent); }
+    .btn { padding: 7px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; }
+    .btn-primary { background: var(--accent); color: #0f1729; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .tabs { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 20px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; margin-bottom: -1px; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; box-shadow: var(--shadow-card); }
+    .card-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 600; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+    .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-select {
+      background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
+      padding: 7px 12px; border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; cursor: pointer;
+    }
+    .filter-select:focus { outline: none; border-color: var(--accent); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(36,52,89,0.5); vertical-align: middle; }
+    tr:hover td { background: rgba(0,212,255,0.03); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-run { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
+    .badge-wait { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-done { background: rgba(100,116,139,0.2); color: #94a3b8; border: 1px solid #475569; }
+    .badge-hold { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn); }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+    .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+    .stat-unit { font-size: 13px; color: var(--text-secondary); margin-left: 4px; }
+    .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    /* Gauge */
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+    .gauge-canvas-wrap { position: relative; width: 160px; height: 100px; }
+    .gauge-val { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); text-align: center; }
+    .gauge-num { font-size: 22px; font-weight: 700; }
+    .gauge-unit { font-size: 11px; color: var(--text-muted); }
+    .equip-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 16px; position: relative; overflow: hidden;
+    }
+    .equip-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .equip-card.running::before { background: var(--success); }
+    .equip-card.idle::before { background: var(--text-muted); }
+    .equip-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .equip-name { font-size: 14px; font-weight: 700; }
+    .equip-status { font-size: 11px; font-weight: 600; }
+    .equip-status.running { color: var(--success); }
+    .equip-status.idle { color: var(--text-muted); }
+    .equip-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .metric-item { background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); padding: 10px; }
+    .metric-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+    .metric-value { font-size: 18px; font-weight: 700; }
+    .metric-value.hot { color: #ff6b35; }
+    .metric-value.ok { color: var(--success); }
+    .metric-value.accent { color: var(--accent); }
+    .temp-profile { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+    .phase-legend { display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+    .phase-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="logo-icon">T</div>
+      <div><div class="logo-text">TaeWoong MES</div><div class="logo-sub">제조AI 스마트공장</div></div>
+    </div>
+    <div class="header-nav">
+      <span style="color:var(--text-muted);font-size:12px;">단조/열처리공정</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="header-badge">경보 2건</span>
+      <span class="header-time" id="clock">--:--:--</span>
+      <div style="width:32px;height:32px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--accent);cursor:pointer;">관</div>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-label">모니터링</div>
+        <div class="nav-item"><span class="nav-icon">📊</span>AI 대시보드</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">공정관리</div>
+        <div class="nav-item"><span class="nav-icon">📦</span>입고배합관리</div>
+        <div class="nav-item"><span class="nav-icon">🔥</span>가열공정</div>
+        <div class="nav-item active"><span class="nav-icon">⚒️</span>단조공정</div>
+        <div class="nav-item" onclick="switchProcess('ht')"><span class="nav-icon">♨️</span>열처리공정</div>
+        <div class="nav-item"><span class="nav-icon">🚢</span>검사출하</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">분석/관리</div>
+        <div class="nav-item"><span class="nav-icon">🔗</span>LOT 계보</div>
+        <div class="nav-item"><span class="nav-icon">🔬</span>품질검사</div>
+        <div class="nav-item"><span class="nav-icon">📈</span>KPI 대시보드</div>
+        <div class="nav-item"><span class="nav-icon">🤖</span>AI Agent</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span>시스템관리</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <div class="page-title">단조 / <span>열처리</span> 공정</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">실시간 설비 모니터링 및 워크오더 관리</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline">📋 작업지시서</button>
+          <button class="btn btn-primary">+ 워크오더 등록</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('forging',this)">⚒️ 단조공정</div>
+        <div class="tab" onclick="switchTab('heattreat',this)">♨️ 열처리공정</div>
+      </div>
+
+      <!-- ─── 단조공정 ─── -->
+      <div id="tab-forging" class="tab-content active">
+        <!-- KPI 요약 -->
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-label">금일 생산량</div>
+            <div class="stat-value">847<span class="stat-unit">개</span></div>
+            <div class="stat-sub" style="color:var(--success);">▲ 목표대비 103.2%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">설비 가동률</div>
+            <div class="stat-value">91.4<span class="stat-unit">%</span></div>
+            <div class="stat-sub">PRESS-01·02 평균</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">불량률</div>
+            <div class="stat-value" style="color:var(--success);">0.8<span class="stat-unit">%</span></div>
+            <div class="stat-sub">목표: 1.0% 이하</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">진행중 워크오더</div>
+            <div class="stat-value">12<span class="stat-unit">건</span></div>
+            <div class="stat-sub">대기 4건 포함</div>
+          </div>
+        </div>
+
+        <!-- 설비 실시간 현황 -->
+        <div class="grid-2" style="margin-bottom:16px;">
+          <!-- PRESS-01 -->
+          <div class="equip-card running">
+            <div class="equip-header">
+              <div>
+                <div class="equip-name">⚒️ PRESS-01</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">2,000ton 프레스</div>
+              </div>
+              <div class="equip-status running">● 가동중</div>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge-canvas-wrap">
+                <canvas id="gauge-press1" width="160" height="100"></canvas>
+                <div class="gauge-val">
+                  <div class="gauge-num" style="color:#ff6b35;">2,850</div>
+                  <div class="gauge-unit">ton</div>
+                </div>
+              </div>
+            </div>
+            <div class="equip-metrics">
+              <div class="metric-item">
+                <div class="metric-label">소재 온도</div>
+                <div class="metric-value hot">1,182°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">타격 횟수</div>
+                <div class="metric-value accent">42회</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">현재 LOT</div>
+                <div class="metric-value" style="font-size:12px;">L-2026-0341</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">진행률</div>
+                <div class="metric-value ok">68%</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;background:rgba(0,0,0,0.2);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:68%;height:100%;background:linear-gradient(90deg,var(--success),#00ff88);border-radius:4px;"></div>
+            </div>
+          </div>
+
+          <!-- PRESS-02 -->
+          <div class="equip-card running">
+            <div class="equip-header">
+              <div>
+                <div class="equip-name">⚒️ PRESS-02</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">3,000ton 프레스</div>
+              </div>
+              <div class="equip-status running">● 가동중</div>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge-canvas-wrap">
+                <canvas id="gauge-press2" width="160" height="100"></canvas>
+                <div class="gauge-val">
+                  <div class="gauge-num" style="color:#ff6b35;">3,100</div>
+                  <div class="gauge-unit">ton</div>
+                </div>
+              </div>
+            </div>
+            <div class="equip-metrics">
+              <div class="metric-item">
+                <div class="metric-label">소재 온도</div>
+                <div class="metric-value hot">1,151°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">타격 횟수</div>
+                <div class="metric-value accent">38회</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">현재 LOT</div>
+                <div class="metric-value" style="font-size:12px;">L-2026-0342</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">진행률</div>
+                <div class="metric-value ok">45%</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;background:rgba(0,0,0,0.2);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:45%;height:100%;background:linear-gradient(90deg,var(--success),#00ff88);border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 차트 2열 -->
+        <div class="grid-2" style="margin-bottom:16px;">
+          <div class="card">
+            <div class="card-title">압력-온도 상관 산점도</div>
+            <canvas id="chart-scatter" height="180"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">시간별 생산량 (금일)</div>
+            <canvas id="chart-hourly" height="180"></canvas>
+          </div>
+        </div>
+
+        <!-- 워크오더 테이블 -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title" style="margin-bottom:0;">워크오더 목록</div>
+            <div class="filter-bar" style="margin-bottom:0;">
+              <select class="filter-select"><option>전체 상태</option><option>진행중</option><option>대기</option><option>완료</option></select>
+              <select class="filter-select"><option>전체 설비</option><option>PRESS-01</option><option>PRESS-02</option></select>
+              <input type="date" class="filter-select" value="2026-05-20" />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>WO번호</th><th>LOT번호</th><th>강종</th><th>규격(mm)</th><th>압하량</th><th>단조비</th><th>설비</th><th>시작시각</th><th>완료예정</th><th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">WO-2026-0841</td>
+                  <td>L-2026-0341</td><td>SCM440</td><td>φ350×1,200</td><td>42%</td><td>4.2</td><td>PRESS-01</td>
+                  <td>08:30</td><td>10:15</td><td><span class="badge badge-run">진행중</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">WO-2026-0842</td>
+                  <td>L-2026-0342</td><td>STS304</td><td>φ420×900</td><td>38%</td><td>3.8</td><td>PRESS-02</td>
+                  <td>09:00</td><td>11:30</td><td><span class="badge badge-run">진행중</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">WO-2026-0843</td>
+                  <td>L-2026-0343</td><td>SKD11</td><td>φ280×800</td><td>45%</td><td>5.1</td><td>PRESS-01</td>
+                  <td>10:30</td><td>12:00</td><td><span class="badge badge-wait">대기</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">WO-2026-0838</td>
+                  <td>L-2026-0338</td><td>SCM440</td><td>φ300×1,000</td><td>40%</td><td>4.0</td><td>PRESS-02</td>
+                  <td>06:00</td><td>08:00</td><td><span class="badge badge-done">완료</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">WO-2026-0839</td>
+                  <td>L-2026-0339</td><td>S45C</td><td>φ200×600</td><td>35%</td><td>3.5</td><td>PRESS-01</td>
+                  <td>06:30</td><td>08:30</td><td><span class="badge badge-done">완료</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 열처리공정 ─── -->
+      <div id="tab-heattreat" class="tab-content">
+        <!-- KPI -->
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-label">가동 배치</div>
+            <div class="stat-value">3<span class="stat-unit">건</span></div>
+            <div class="stat-sub">HT-01·02·03</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">금일 완료</div>
+            <div class="stat-value">8<span class="stat-unit">배치</span></div>
+            <div class="stat-sub" style="color:var(--success);">▲ 목표대비 100%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">불합격률</div>
+            <div class="stat-value" style="color:var(--success);">0.3<span class="stat-unit">%</span></div>
+            <div class="stat-sub">목표: 0.5% 이하</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">평균 에너지 효율</div>
+            <div class="stat-value">87.2<span class="stat-unit">%</span></div>
+            <div class="stat-sub">기준: 85% 이상</div>
+          </div>
+        </div>
+
+        <!-- 노 현황 -->
+        <div class="grid-2" style="margin-bottom:16px;">
+          <div class="equip-card running">
+            <div class="equip-header">
+              <div>
+                <div class="equip-name">♨️ HT-01 (담금질로)</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Quenching Furnace · 최대 1,100°C</div>
+              </div>
+              <div class="equip-status running">● 가동중</div>
+            </div>
+            <div class="equip-metrics">
+              <div class="metric-item">
+                <div class="metric-label">현재 온도</div>
+                <div class="metric-value hot">870°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">목표 온도</div>
+                <div class="metric-value accent">880°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">잔여 시간</div>
+                <div class="metric-value ok">1h 23m</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">현재 구간</div>
+                <div class="metric-value" style="font-size:12px;color:#ffd32a;">유지단계</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;">현재 배치: HT-2026-084 · L-2026-0330 외 3LOT · SCM440</div>
+              <div style="background:rgba(0,0,0,0.2);border-radius:4px;height:6px;overflow:hidden;">
+                <div style="width:72%;height:100%;background:linear-gradient(90deg,#ffd32a,#ff6b35);border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;"><span>진행률 72%</span><span>완료예정 11:45</span></div>
+            </div>
+          </div>
+
+          <div class="equip-card running">
+            <div class="equip-header">
+              <div>
+                <div class="equip-name">♨️ HT-02 (뜨임로)</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Tempering Furnace · 최대 700°C</div>
+              </div>
+              <div class="equip-status running">● 가동중</div>
+            </div>
+            <div class="equip-metrics">
+              <div class="metric-item">
+                <div class="metric-label">현재 온도</div>
+                <div class="metric-value" style="color:#ffd32a;">580°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">목표 온도</div>
+                <div class="metric-value accent">580°C</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">잔여 시간</div>
+                <div class="metric-value ok">45m</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">현재 구간</div>
+                <div class="metric-value ok" style="font-size:12px;">냉각단계</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;">현재 배치: HT-2026-083 · L-2026-0328 외 2LOT · STS304</div>
+              <div style="background:rgba(0,0,0,0.2);border-radius:4px;height:6px;overflow:hidden;">
+                <div style="width:88%;height:100%;background:linear-gradient(90deg,var(--success),#00ff88);border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;"><span>진행률 88%</span><span>완료예정 10:30</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 온도 프로파일 차트 -->
+        <div class="temp-profile" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title" style="margin-bottom:0;">HT-01 온도 프로파일 (담금질 사이클)</div>
+            <div class="phase-legend">
+              <span><span class="phase-dot" style="background:var(--accent);"></span>실측온도</span>
+              <span><span class="phase-dot" style="background:var(--warn);border:1px dashed var(--warn);"></span>목표온도</span>
+            </div>
+          </div>
+          <canvas id="chart-tempprofile" height="160"></canvas>
+          <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:10px;color:var(--text-muted);">
+            <span style="color:var(--accent);">▶ 승온단계 (0~2h)</span>
+            <span style="color:#ffd32a;">▶ 유지단계 (2~4h) ← 현재</span>
+            <span style="color:var(--success);">▶ 냉각단계 (4~5h)</span>
+          </div>
+        </div>
+
+        <!-- 배치 목록 -->
+        <div class="card">
+          <div class="card-title">열처리 배치 목록</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>배치번호</th><th>LOT</th><th>강종</th><th>열처리종류</th><th>설비</th><th>목표온도</th><th>유지시간</th><th>시작시각</th><th>완료예정</th><th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">HT-2026-084</td>
+                  <td>L-2026-0330~333</td><td>SCM440</td><td>담금질(QT)</td><td>HT-01</td><td>880°C</td><td>2h</td><td>07:30</td><td>11:45</td>
+                  <td><span class="badge badge-run">진행중</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">HT-2026-083</td>
+                  <td>L-2026-0328~329</td><td>STS304</td><td>뜨임(Temp)</td><td>HT-02</td><td>580°C</td><td>3h</td><td>07:00</td><td>10:30</td>
+                  <td><span class="badge badge-run">진행중</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">HT-2026-082</td>
+                  <td>L-2026-0325~327</td><td>SKD11</td><td>어닐링(Ann)</td><td>HT-01</td><td>850°C</td><td>4h</td><td>12:00</td><td>17:00</td>
+                  <td><span class="badge badge-wait">대기</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">HT-2026-081</td>
+                  <td>L-2026-0322~324</td><td>SCM440</td><td>담금질(QT)</td><td>HT-02</td><td>880°C</td><td>2h</td><td>03:00</td><td>07:00</td>
+                  <td><span class="badge badge-done">완료</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Clock
+    function updateClock() {
+      const now = new Date()
+      document.getElementById('clock').textContent = now.toLocaleTimeString('ko-KR', {hour12:false})
+    }
+    updateClock(); setInterval(updateClock, 1000)
+
+    // Tab switching
+    function switchTab(name, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'))
+      el.classList.add('active')
+      document.getElementById('tab-' + name).classList.add('active')
+    }
+
+    // Gauge drawing (semi-circle)
+    function drawGauge(canvasId, val, max, color) {
+      const canvas = document.getElementById(canvasId)
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const cx = 80, cy = 90, r = 70
+      ctx.clearRect(0, 0, 160, 100)
+      // Track
+      ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.lineWidth = 10; ctx.strokeStyle = '#243459'; ctx.stroke()
+      // Fill
+      const angle = Math.PI + (val / max) * Math.PI
+      ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, angle); ctx.lineWidth = 10; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.stroke()
+    }
+
+    drawGauge('gauge-press1', 2850, 3000, '#ff6b35')
+    drawGauge('gauge-press2', 3100, 3500, '#ff6b35')
+
+    // Scatter chart
+    new Chart(document.getElementById('chart-scatter'), {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'PRESS-01', backgroundColor: 'rgba(0,212,255,0.7)',
+          data: Array.from({length:20},()=>({x:Math.random()*300+900, y:Math.random()*800+2400}))
+        },{
+          label: 'PRESS-02', backgroundColor: 'rgba(0,214,143,0.7)',
+          data: Array.from({length:20},()=>({x:Math.random()*300+900, y:Math.random()*1000+2600}))
+        }]
+      },
+      options: {
+        responsive:true, animation:false,
+        plugins:{legend:{labels:{color:'#8fa3c7',font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'},title:{display:true,text:'온도(°C)',color:'#8fa3c7'}},
+          y:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'},title:{display:true,text:'압력(ton)',color:'#8fa3c7'}}
+        }
+      }
+    })
+
+    // Hourly production
+    const hours = Array.from({length:10},(_,i)=>`${i+6}:00`)
+    new Chart(document.getElementById('chart-hourly'), {
+      type: 'bar',
+      data: {
+        labels: hours,
+        datasets: [
+          {label:'PRESS-01',backgroundColor:'rgba(0,212,255,0.6)',data:[82,88,91,85,93,87,90,84,88,0]},
+          {label:'PRESS-02',backgroundColor:'rgba(0,214,143,0.6)',data:[76,82,79,88,86,90,83,87,91,0]}
+        ]
+      },
+      options: {
+        responsive:true, animation:false,
+        plugins:{legend:{labels:{color:'#8fa3c7',font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'}},
+          y:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'}}
+        }
+      }
+    })
+
+    // Temperature profile
+    const timeLabels = ['0h','0.5h','1h','1.5h','2h','2.5h','3h','3.5h','4h','4.5h','5h']
+    const targetTemp = [200,450,700,830,880,880,880,880,600,300,80]
+    const actualTemp = [195,445,698,832,878,881,879,880,null,null,null]
+    new Chart(document.getElementById('chart-tempprofile'), {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [
+          {label:'실측온도',data:actualTemp,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.1)',borderWidth:2,fill:true,tension:0.3,pointRadius:3},
+          {label:'목표온도',data:targetTemp,borderColor:'#ff6b35',borderWidth:2,borderDash:[5,4],fill:false,tension:0.3,pointRadius:0}
+        ]
+      },
+      options: {
+        responsive:true, animation:false,
+        plugins:{legend:{labels:{color:'#8fa3c7',font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'}},
+          y:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'},title:{display:true,text:'온도(°C)',color:'#8fa3c7'},min:0,max:950}
+        }
+      }
+    })
+  </script>
+</body>
+</html>

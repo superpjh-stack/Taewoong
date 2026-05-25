@@ -1,0 +1,30 @@
+# Dependencies — reinstalled inside the image
+node_modules
+**/node_modules
+
+# Build artifacts
+**/dist
+**/.next
+**/.turbo
+
+# Env files — provided via docker-compose env_file / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+
+# VCS / IDE / OS
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Misc
+*.log
+npm-debug.log*
+pnpm-debug.log*
+README.md
+docs
+*.pdf

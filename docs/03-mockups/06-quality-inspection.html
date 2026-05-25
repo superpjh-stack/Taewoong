@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>태웅 제조AI 시스템 - 품질검사</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-base:#0f1729; --bg-card:#1a2744; --bg-sidebar:#111e38; --bg-header:#13203d;
+      --border:#243459; --accent:#00d4ff; --accent-dim:rgba(0,212,255,0.12);
+      --warn:#ff6b35; --warn-dim:rgba(255,107,53,0.15); --danger:#ff3b3b; --danger-dim:rgba(255,59,59,0.15);
+      --success:#00d68f; --success-dim:rgba(0,214,143,0.15);
+      --text-primary:#e8edf8; --text-secondary:#8fa3c7; --text-muted:#4d6080;
+      --sidebar-w:240px; --header-h:60px; --radius-sm:6px; --radius-md:10px; --shadow-card:0 4px 24px rgba(0,0,0,0.4);
+    }
+    html, body { height: 100%; }
+    body { font-family:'Noto Sans KR',sans-serif; background:var(--bg-base); color:var(--text-primary); display:flex; flex-direction:column; min-width:1280px; font-size:13px; line-height:1.5; }
+    .app-header { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:var(--bg-header); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px 0 0; z-index:100; }
+    .header-logo { width:var(--sidebar-w); display:flex; align-items:center; gap:10px; padding:0 20px; border-right:1px solid var(--border); height:100%; flex-shrink:0; }
+    .logo-icon { width:34px; height:34px; background:linear-gradient(135deg,var(--accent),#0090b8); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; }
+    .logo-text { font-weight:700; font-size:14px; }
+    .logo-sub { font-size:10px; color:var(--text-muted); margin-top:1px; }
+    .app-body { display:flex; margin-top:var(--header-h); flex:1; }
+    .sidebar { position:fixed; top:var(--header-h); left:0; bottom:0; width:var(--sidebar-w); background:var(--bg-sidebar); border-right:1px solid var(--border); overflow-y:auto; padding:12px 0; }
+    .nav-group-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; padding:8px 16px 4px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 16px; cursor:pointer; color:var(--text-secondary); font-size:13px; border-left:3px solid transparent; }
+    .nav-item:hover { background:rgba(0,212,255,0.05); color:var(--text-primary); }
+    .nav-item.active { background:var(--accent-dim); color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+    .main { margin-left:var(--sidebar-w); flex:1; padding:24px; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .page-title { font-size:20px; font-weight:700; }
+    .page-title span { color:var(--accent); }
+    .btn { padding:7px 16px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-size:12px; font-weight:600; font-family:inherit; }
+    .btn-primary { background:var(--accent); color:#0f1729; }
+    .btn-danger { background:var(--danger-dim); border:1px solid var(--danger); color:var(--danger); }
+    .btn-success { background:var(--success-dim); border:1px solid var(--success); color:var(--success); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-secondary); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .tabs { display:flex; gap:2px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+    .tab { padding:10px 20px; cursor:pointer; color:var(--text-secondary); border-bottom:2px solid transparent; font-size:13px; font-weight:500; margin-bottom:-1px; }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; box-shadow:var(--shadow-card); }
+    .card-title { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; font-weight:600; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; }
+    .filter-bar { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    .filter-select { background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); padding:7px 12px; border-radius:var(--radius-sm); font-size:12px; font-family:inherit; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { padding:10px 12px; text-align:left; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; white-space:nowrap; }
+    td { padding:10px 12px; border-bottom:1px solid rgba(36,52,89,0.5); vertical-align:middle; cursor:pointer; }
+    tr:hover td { background:rgba(0,212,255,0.03); }
+    tr.selected td { background:rgba(0,212,255,0.07); }
+    .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
+    .badge-pass { background:var(--success-dim); color:var(--success); border:1px solid var(--success); }
+    .badge-fail { background:var(--danger-dim); color:var(--danger); border:1px solid var(--danger); }
+    .badge-wait { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); }
+    .badge-review { background:var(--warn-dim); color:var(--warn); border:1px solid var(--warn); }
+    .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; }
+    .stat-label { font-size:11px; color:var(--text-muted); margin-bottom:6px; }
+    .stat-value { font-size:24px; font-weight:700; }
+    .stat-unit { font-size:13px; color:var(--text-secondary); margin-left:4px; }
+    .stat-sub { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    /* AI Result Card */
+    .ai-result-card {
+      background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(0,0,0,0.2));
+      border:1px solid var(--accent); border-radius:var(--radius-md); padding:20px;
+    }
+    .ai-verdict { font-size:28px; font-weight:700; margin:8px 0; }
+    .ai-verdict.pass { color:var(--success); }
+    .ai-verdict.fail { color:var(--danger); }
+    .ai-verdict.review { color:var(--warn); }
+    .confidence-bar { height:10px; background:rgba(0,0,0,0.3); border-radius:5px; overflow:hidden; margin:8px 0; }
+    .confidence-fill { height:100%; border-radius:5px; transition:width 0.5s ease; }
+    .confidence-fill.high { background:linear-gradient(90deg,var(--success),#00ff88); }
+    .confidence-fill.mid { background:linear-gradient(90deg,var(--warn),#ffd32a); }
+    .confidence-fill.low { background:linear-gradient(90deg,var(--danger),#ff6b35); }
+    .reason-list { list-style:none; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+    .reason-item { display:flex; align-items:flex-start; gap:8px; font-size:12px; padding:6px 10px; background:rgba(0,0,0,0.2); border-radius:4px; }
+    .reason-icon { flex-shrink:0; }
+    /* 4M Card */
+    .m4-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .m4-card { background:rgba(0,0,0,0.2); border-radius:var(--radius-sm); padding:12px; }
+    .m4-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:600; }
+    .m4-tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; background:rgba(255,107,53,0.15); color:var(--warn); border:1px solid rgba(255,107,53,0.3); margin:2px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="logo-icon">T</div>
+      <div><div class="logo-text">TaeWoong MES</div><div class="logo-sub">제조AI 스마트공장</div></div>
+    </div>
+    <div style="flex:1;padding-left:24px;font-size:12px;color:var(--text-muted);">품질검사 / 불량관리</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);padding:2px 8px;border-radius:4px;font-size:11px;">사람검토 필요 3건</span>
+      <span style="font-size:13px;color:var(--accent);font-weight:600;" id="clock">--:--:--</span>
+      <div style="width:32px;height:32px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--accent);">관</div>
+    </div>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="nav-group-label">모니터링</div>
+      <div class="nav-item"><span>📊</span>AI 대시보드</div>
+      <div class="nav-group-label">공정관리</div>
+      <div class="nav-item"><span>📦</span>입고배합관리</div>
+      <div class="nav-item"><span>🔥</span>가열공정</div>
+      <div class="nav-item"><span>⚒️</span>단조공정</div>
+      <div class="nav-item"><span>♨️</span>열처리공정</div>
+      <div class="nav-item"><span>🚢</span>검사출하</div>
+      <div class="nav-group-label">분석/관리</div>
+      <div class="nav-item"><span>🔗</span>LOT 계보</div>
+      <div class="nav-item active"><span>🔬</span>품질검사</div>
+      <div class="nav-item"><span>📈</span>KPI 대시보드</div>
+      <div class="nav-item"><span>🤖</span>AI Agent</div>
+      <div class="nav-item"><span>⚙️</span>시스템관리</div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <div class="page-title">품질 <span>검사</span> / 불량관리</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">AI 기반 자동 합부 판정 · 신뢰도 기반 Human-in-the-Loop</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline">📋 검사 의뢰</button>
+          <button class="btn btn-primary">+ 검사 등록</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('insp',this)">🔬 품질검사</div>
+        <div class="tab" onclick="switchTab('defect',this)">⚠️ 불량관리</div>
+      </div>
+
+      <!-- ─── 품질검사 ─── -->
+      <div id="tab-insp" class="tab-content active">
+        <!-- KPI -->
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-label">금일 검사 건수</div>
+            <div class="stat-value">47<span class="stat-unit">건</span></div>
+            <div class="stat-sub">완료 42 / 대기 5</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">합격률</div>
+            <div class="stat-value" style="color:var(--success);">97.8<span class="stat-unit">%</span></div>
+            <div class="stat-sub">목표: 97% 이상</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AI 자동판정률</div>
+            <div class="stat-value" style="color:var(--accent);">89.4<span class="stat-unit">%</span></div>
+            <div class="stat-sub">사람검토 5건</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">평균 신뢰도</div>
+            <div class="stat-value">91.2<span class="stat-unit">%</span></div>
+            <div class="stat-sub">임계치 80% 기준</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- 검사 목록 -->
+          <div class="card" style="grid-column:1/3;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div class="card-title" style="margin-bottom:0;">검사 목록</div>
+              <div class="filter-bar" style="margin-bottom:0;">
+                <select class="filter-select"><option>전체 검사종류</option><option>초음파(UT)</option><option>외관검사</option><option>치수검사</option><option>경도검사</option></select>
+                <select class="filter-select"><option>전체 상태</option><option>대기</option><option>AI판정중</option><option>사람검토</option><option>완료</option></select>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>검사번호</th><th>LOT번호</th><th>강종</th><th>검사종류</th><th>담당자</th><th>AI판정</th><th>신뢰도</th><th>최종결과</th><th>접수일시</th><th>액션</th></tr>
+              </thead>
+              <tbody>
+                <tr class="selected" onclick="showAI('L-2026-0341','UT','pass',92.4)">
+                  <td style="color:var(--accent);font-weight:600;">QI-2026-1241</td>
+                  <td>L-2026-0341</td><td>SCM440</td><td>초음파(UT)</td><td>박검사</td>
+                  <td><span class="badge badge-review">사람검토</span></td>
+                  <td><span style="color:var(--warn);font-weight:600;">78.3%</span></td>
+                  <td>—</td><td>14:00</td>
+                  <td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="showAI('L-2026-0341','UT','review',78.3)">검토</button></td>
+                </tr>
+                <tr onclick="showAI('L-2026-0340','외관','pass',96.1)">
+                  <td style="color:var(--accent);font-weight:600;">QI-2026-1240</td>
+                  <td>L-2026-0340</td><td>STS304</td><td>외관검사</td><td>이검사</td>
+                  <td><span class="badge badge-pass">합격</span></td>
+                  <td><span style="color:var(--success);font-weight:600;">96.1%</span></td>
+                  <td><span class="badge badge-pass">합격</span></td><td>13:30</td>
+                  <td>—</td>
+                </tr>
+                <tr onclick="showAI('L-2026-0339','치수','fail',94.7)">
+                  <td style="color:var(--accent);font-weight:600;">QI-2026-1239</td>
+                  <td>L-2026-0339</td><td>SCM440</td><td>치수검사</td><td>김검사</td>
+                  <td><span class="badge badge-fail">불합격</span></td>
+                  <td><span style="color:var(--success);font-weight:600;">94.7%</span></td>
+                  <td><span class="badge badge-fail">불합격</span></td><td>12:45</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">QI-2026-1238</td>
+                  <td>L-2026-0338</td><td>S45C</td><td>경도검사</td><td>박검사</td>
+                  <td><span class="badge badge-pass">합격</span></td>
+                  <td><span style="color:var(--success);font-weight:600;">98.2%</span></td>
+                  <td><span class="badge badge-pass">합격</span></td><td>11:00</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent);font-weight:600;">QI-2026-1237</td>
+                  <td>L-2026-0342</td><td>STS316</td><td>초음파(UT)</td><td>이검사</td>
+                  <td><span class="badge badge-wait">AI판정중</span></td>
+                  <td>—</td>
+                  <td>—</td><td>14:15</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- AI 판정 결과 카드 -->
+          <div id="ai-result-panel" style="display:none;">
+            <div class="ai-result-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">AI 판정 결과</div>
+                  <div style="font-size:14px;font-weight:700;" id="ai-lot-label">L-2026-0341 · 초음파(UT)</div>
+                </div>
+                <div style="font-size:24px;" id="ai-icon">🤖</div>
+              </div>
+              <div class="ai-verdict review" id="ai-verdict-text">⚠️ 사람 검토 필요</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">AI 신뢰도</div>
+              <div class="confidence-bar">
+                <div class="confidence-fill mid" id="confidence-fill" style="width:78.3%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:12px;">
+                <span style="color:var(--text-muted);">0%</span>
+                <span id="confidence-label" style="color:var(--warn);font-weight:700;">78.3% — 임계치(80%) 미만 → 사람 검토</span>
+                <span style="color:var(--text-muted);">100%</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">판정 근거</div>
+              <ul class="reason-list" id="ai-reasons">
+                <li class="reason-item"><span class="reason-icon">⚠️</span><span>경계성 에코 신호 감지 — 추가 확인 필요 (DAC 95% 레벨)</span></li>
+                <li class="reason-item"><span class="reason-icon">✅</span><span>두께 편차 ±0.4mm (기준 ±0.5mm 이내)</span></li>
+                <li class="reason-item"><span class="reason-icon">✅</span><span>내부 결함 에코 없음 (주요 영역 클리어)</span></li>
+              </ul>
+              <div style="display:flex;gap:8px;margin-top:16px;">
+                <button class="btn btn-success" style="flex:1;" onclick="judgeHuman('pass')">✅ 합격 확정</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="judgeHuman('fail')">❌ 불합격</button>
+                <button class="btn btn-outline" style="flex:1;">📋 재검사 요청</button>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+              <div class="card-title">합격률 트렌드 (30일)</div>
+              <canvas id="chart-passrate" height="150"></canvas>
+            </div>
+          </div>
+
+          <!-- default state -->
+          <div id="no-select-msg" class="card" style="display:flex;align-items:center;justify-content:center;min-height:200px;">
+            <div style="text-align:center;color:var(--text-muted);">
+              <div style="font-size:32px;margin-bottom:8px;">🔬</div>
+              <div>검사 항목을 클릭하면 AI 판정 결과를 확인할 수 있습니다</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 불량관리 ─── -->
+      <div id="tab-defect" class="tab-content">
+        <!-- 불량 등록/이력 -->
+        <div class="grid-2" style="margin-bottom:16px;align-items:start;">
+          <div class="card" style="grid-column:1/3;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div class="card-title" style="margin-bottom:0;">불량 이력</div>
+              <div class="filter-bar" style="margin-bottom:0;">
+                <select class="filter-select"><option>전체 불량코드</option><option>DF-UT01 내부결함</option><option>DF-DM01 치수불량</option><option>DF-SC01 표면크랙</option></select>
+                <select class="filter-select"><option>전체 공정</option><option>단조</option><option>열처리</option><option>검사</option></select>
+                <input type="date" class="filter-select" value="2026-05-20" />
+                <button class="btn btn-primary" style="padding:7px 12px;">+ 불량 등록</button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>일시</th><th>LOT번호</th><th>불량코드</th><th>불량내용</th><th>발생공정</th><th>중량손실</th><th>처리방법</th><th>조치자</th><th>상태</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>05-20 13:45</td>
+                  <td style="color:var(--accent);">L-2026-0339</td>
+                  <td><span style="color:var(--danger);font-weight:600;">DF-DM01</span></td>
+                  <td>외경 치수 초과 (+2.1mm)</td><td>검사</td><td>—</td>
+                  <td><span class="badge badge-fail">스크랩</span></td>
+                  <td>김검사</td><td><span class="badge badge-wait">처리중</span></td>
+                </tr>
+                <tr>
+                  <td>05-19 16:20</td>
+                  <td style="color:var(--accent);">L-2026-0335</td>
+                  <td><span style="color:var(--warn);font-weight:600;">DF-SC01</span></td>
+                  <td>표면 미세크랙 (2mm × 3개소)</td><td>단조</td><td>12kg</td>
+                  <td>보완가공</td>
+                  <td>이단조</td><td><span class="badge badge-pass">완료</span></td>
+                </tr>
+                <tr>
+                  <td>05-18 10:00</td>
+                  <td style="color:var(--accent);">L-2026-0328</td>
+                  <td><span style="color:var(--danger);font-weight:600;">DF-UT01</span></td>
+                  <td>내부 결함 에코 초과 (DAC 110%)</td><td>초음파검사</td><td>850kg</td>
+                  <td><span class="badge badge-fail">스크랩</span></td>
+                  <td>박검사</td><td><span class="badge badge-pass">완료</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 불량 분석 차트 + 4M -->
+        <div class="grid-2" style="margin-bottom:16px;">
+          <div class="card">
+            <div class="card-title">불량유형별 분포</div>
+            <canvas id="chart-defect-pie" height="220"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">공정별 불량 발생 추세 (주간)</div>
+            <canvas id="chart-defect-trend" height="220"></canvas>
+          </div>
+        </div>
+
+        <!-- 4M 원인분석 -->
+        <div class="card">
+          <div class="card-title">4M 원인분석 — DF-DM01 (치수불량) 기준</div>
+          <div class="m4-grid">
+            <div class="m4-card">
+              <div class="m4-label">👤 Man (작업자)</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">작업자 숙련도·주의 관련 요인</div>
+              <span class="m4-tag">금형 세팅 오류</span>
+              <span class="m4-tag">작업 지시서 미확인</span>
+            </div>
+            <div class="m4-card">
+              <div class="m4-label">⚙️ Machine (설비)</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">설비·금형 관련 요인</div>
+              <span class="m4-tag">프레스 편심 마모</span>
+              <span class="m4-tag">금형 마모 한계 초과</span>
+              <span class="m4-tag">가이드핀 유격</span>
+            </div>
+            <div class="m4-card">
+              <div class="m4-label">🧱 Material (재료)</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">소재·성분 관련 요인</div>
+              <span class="m4-tag">소재 온도 불균일</span>
+              <span class="m4-tag">성분 편차 (Cr ±0.15%)</span>
+            </div>
+            <div class="m4-card">
+              <div class="m4-label">📋 Method (방법)</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">공정·기준 관련 요인</div>
+              <span class="m4-tag">가열조건 변경 미반영</span>
+              <span class="m4-tag">검사 기준 불명확</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:12px;background:rgba(0,212,255,0.05);border:1px solid var(--accent-dim);border-radius:var(--radius-sm);">
+            <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px;">🤖 AI 개선 제안</div>
+            <div style="font-size:12px;color:var(--text-secondary);">금형 마모도 모니터링 강화 및 교체 주기를 현재 500타격에서 400타격으로 단축 권고. PRESS-01 편심 점검 즉시 실시 필요.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR',{hour12:false})
+    }
+    updateClock(); setInterval(updateClock, 1000)
+
+    function switchTab(name, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'))
+      el.classList.add('active')
+      document.getElementById('tab-'+name).classList.add('active')
+    }
+
+    let passrateChart = null
+    function showAI(lot, type, verdict, confidence) {
+      document.getElementById('no-select-msg').style.display = 'none'
+      document.getElementById('ai-result-panel').style.display = 'block'
+      document.getElementById('ai-lot-label').textContent = `${lot} · ${type}`
+      const vt = document.getElementById('ai-verdict-text')
+      const cf = document.getElementById('confidence-fill')
+      const cl = document.getElementById('confidence-label')
+      if (verdict === 'pass') {
+        vt.textContent = '✅ 합격'; vt.className = 'ai-verdict pass'
+        cf.className = 'confidence-fill high'; cf.style.width = confidence + '%'
+        cl.textContent = `${confidence}% — 임계치(80%) 이상 → 자동판정`; cl.style.color = 'var(--success)'
+      } else if (verdict === 'fail') {
+        vt.textContent = '❌ 불합격'; vt.className = 'ai-verdict fail'
+        cf.className = 'confidence-fill high'; cf.style.width = confidence + '%'
+        cl.textContent = `${confidence}% — 불합격 확신`; cl.style.color = 'var(--danger)'
+      } else {
+        vt.textContent = '⚠️ 사람 검토 필요'; vt.className = 'ai-verdict review'
+        cf.className = 'confidence-fill mid'; cf.style.width = confidence + '%'
+        cl.textContent = `${confidence}% — 임계치(80%) 미만 → 사람 검토`; cl.style.color = 'var(--warn)'
+      }
+      // Render pass rate chart
+      if (!passrateChart) {
+        const days = Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-29+i); return `${d.getMonth()+1}/${d.getDate()}` })
+        passrateChart = new Chart(document.getElementById('chart-passrate'), {
+          type:'line',
+          data:{
+            labels:days,
+            datasets:[{label:'합격률',data:days.map(()=>94+Math.random()*5),borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.08)',fill:true,tension:0.3,pointRadius:0}]
+          },
+          options:{responsive:true,animation:false,plugins:{legend:{labels:{color:'#8fa3c7',font:{size:10}}}},
+            scales:{x:{ticks:{color:'#8fa3c7',maxTicksLimit:8},grid:{color:'#1a2744'}},y:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'},min:90,max:100,title:{display:true,text:'%',color:'#8fa3c7'}}}}
+        })
+      }
+    }
+
+    function judgeHuman(verdict) {
+      alert(`담당자 판정: ${verdict === 'pass' ? '✅ 합격' : '❌ 불합격'}\nQI-2026-1241이 ${verdict === 'pass' ? '합격' : '불합격'} 처리되었습니다.`)
+    }
+
+    // Defect pie chart
+    new Chart(document.getElementById('chart-defect-pie'), {
+      type:'doughnut',
+      data:{
+        labels:['내부결함(UT)','치수불량','표면크랙','경도불량','기타'],
+        datasets:[{data:[35,28,22,10,5],backgroundColor:['rgba(255,59,59,0.7)','rgba(255,107,53,0.7)','rgba(255,211,42,0.7)','rgba(0,212,255,0.7)','rgba(100,116,139,0.7)'],borderWidth:0}]
+      },
+      options:{responsive:true,animation:false,plugins:{legend:{position:'right',labels:{color:'#8fa3c7',font:{size:11}}}}}
+    })
+
+    // Defect trend
+    const wks = ['5/1주','5/2주','5/3주','5/4주']
+    new Chart(document.getElementById('chart-defect-trend'), {
+      type:'line',
+      data:{
+        labels:wks,
+        datasets:[
+          {label:'단조',data:[1.2,0.9,1.1,0.8],borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',fill:true,tension:0.3},
+          {label:'열처리',data:[0.4,0.3,0.5,0.3],borderColor:'#ffd32a',backgroundColor:'rgba(255,211,42,0.1)',fill:true,tension:0.3},
+          {label:'검사',data:[0.2,0.1,0.2,0.1],borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.1)',fill:true,tension:0.3}
+        ]
+      },
+      options:{responsive:true,animation:false,plugins:{legend:{labels:{color:'#8fa3c7',font:{size:11}}}},
+        scales:{x:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'}},y:{ticks:{color:'#8fa3c7'},grid:{color:'#1a2744'},title:{display:true,text:'불량률(%)',color:'#8fa3c7'}}}}
+    })
+  </script>
+</body>
+</html>

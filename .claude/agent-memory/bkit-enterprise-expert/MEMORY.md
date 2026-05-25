@@ -1,0 +1,2 @@
+- [TaeWoong MES Project](project_taewoong-mes.md) — 단조/열처리 MES, Heat No./LOT 트레이서빌리티 중심, 10개 모듈, 설계 단계
+- [Project Conventions](project_conventions.md) — confidence 필수, kebab-case API, snake_case+soft delete, Closure Table LOT 추적

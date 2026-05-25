@@ -1,0 +1,37 @@
+{
+  "name": "@taewung/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx/esm --watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node --import tsx/esm src/db/migrate.ts",
+    "db:seed": "node --import tsx/esm src/db/seed.ts"
+  },
+  "dependencies": {
+    "@taewung/types": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "postgres": "^3.4.3",
+    "redis": "^4.6.13",
+    "winston": "^3.13.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

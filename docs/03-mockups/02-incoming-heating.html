@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>입고배합관리 / 가열공정관리 — 태웅 제조AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* =========================================================
+       DESIGN TOKENS
+    ========================================================= */
+    :root {
+      --bg:        #0f1729;
+      --card:      #1a2744;
+      --card-alt:  #1e2f50;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #00d4ff;
+      --success:   #00d68f;
+      --warn:      #ff6b35;
+      --danger:    #ff3b3b;
+      --text:      #e2e8f0;
+      --text-muted:#8a9bbe;
+      --sidebar-w: 240px;
+      --header-h:  60px;
+      --radius:    8px;
+      --radius-lg: 12px;
+    }
+
+    /* =========================================================
+       RESET & BASE
+    ========================================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    button { cursor: pointer; font-family: inherit; }
+    select, input { font-family: inherit; }
+
+    /* =========================================================
+       LAYOUT SHELL
+    ========================================================= */
+    .shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ---- SIDEBAR ---- */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: #111b35;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-brand {
+      padding: 18px 20px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      letter-spacing: -0.3px;
+    }
+    .sidebar-nav { padding: 10px 0; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: rgba(0,212,255,0.05); color: var(--text); }
+    .nav-item.active {
+      background: rgba(0,212,255,0.1);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
+
+    /* ---- MAIN AREA ---- */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* ---- HEADER ---- */
+    .header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      background: #111b35;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .header-time { color: var(--accent); font-weight: 600; letter-spacing: 0.5px; }
+    .status-dot {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .dot-on { background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+    /* ---- CONTENT ---- */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+
+    /* =========================================================
+       MAIN TABS (최상단)
+    ========================================================= */
+    .main-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+    .main-tab-btn {
+      padding: 10px 22px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .main-tab-btn:hover { color: var(--text); }
+    .main-tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* =========================================================
+       SUB TABS
+    ========================================================= */
+    .sub-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 18px;
+    }
+    .sub-tab-btn {
+      padding: 7px 16px;
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .sub-tab-btn:hover { color: var(--text); background: var(--card); }
+    .sub-tab-btn.active {
+      color: var(--accent);
+      background: var(--card);
+      border-color: var(--accent);
+      border-bottom-color: var(--card);
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       SUMMARY CARDS
+    ========================================================= */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .summary-card .s-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .summary-card .s-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+    .summary-card .s-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .summary-card.warn  .s-value { color: var(--warn); }
+    .summary-card.danger .s-value { color: var(--danger); }
+    .summary-card.success .s-value { color: var(--success); }
+
+    /* =========================================================
+       FILTER BAR
+    ========================================================= */
+    .filter-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .filter-bar label { font-size: 12px; color: var(--text-muted); margin-right: 4px; }
+    .filter-bar input,
+    .filter-bar select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .filter-bar input:focus,
+    .filter-bar select:focus { border-color: var(--accent); }
+    .filter-bar input::placeholder { color: var(--text-muted); }
+    .filter-sep { color: var(--border); }
+
+    /* =========================================================
+       TABLE
+    ========================================================= */
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      background: rgba(255,255,255,0.04);
+      padding: 11px 12px;
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td {
+      padding: 10px 12px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+    tbody tr.row-fail { background: rgba(255,59,59,0.08); }
+    tbody tr.row-fail:hover { background: rgba(255,59,59,0.12); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-success { background: rgba(0,214,143,0.15); color: var(--success); }
+    .badge-warn    { background: rgba(255,107,53,0.15);  color: var(--warn); }
+    .badge-danger  { background: rgba(255,59,59,0.15);   color: var(--danger); }
+    .badge-info    { background: rgba(0,212,255,0.15);   color: var(--accent); }
+    .badge-gray    { background: rgba(138,155,190,0.15); color: var(--text-muted); }
+    .btn-action {
+      padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
+      border: 1px solid; cursor: pointer; transition: all 0.15s;
+      margin-right: 4px;
+    }
+    .btn-action.primary { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+    .btn-action.primary:hover { background: rgba(0,212,255,0.18); }
+    .btn-action.secondary { border-color: var(--border); color: var(--text-muted); background: transparent; }
+    .btn-action.secondary:hover { color: var(--text); border-color: var(--text-muted); }
+    .btn-action.warn { border-color: var(--warn); color: var(--warn); background: rgba(255,107,53,0.08); }
+    .btn-action.warn:hover { background: rgba(255,107,53,0.18); }
+    .btn-action.danger { border-color: var(--danger); color: var(--danger); background: rgba(255,59,59,0.08); }
+    .btn-action.danger:hover { background: rgba(255,59,59,0.18); }
+
+    /* =========================================================
+       BIG BUTTON
+    ========================================================= */
+    .btn-main {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; border: none;
+      transition: all 0.2s;
+    }
+    .btn-main.accent {
+      background: var(--accent); color: #0f1729;
+    }
+    .btn-main.accent:hover { background: #00bfe8; }
+    .btn-main.success {
+      background: var(--success); color: #0f1729;
+    }
+    .btn-main.success:hover { background: #00bf7f; }
+
+    /* =========================================================
+       SECTION HEADER
+    ========================================================= */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
+
+    /* =========================================================
+       AI CHAT PANEL
+    ========================================================= */
+    .ai-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      height: 520px;
+    }
+    .ai-panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ai-panel-title { font-size: 14px; font-weight: 700; }
+    .ai-panel-meta {
+      display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted);
+    }
+    .ai-chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chat-row { display: flex; flex-direction: column; gap: 6px; }
+    .chat-row.user { align-items: flex-end; }
+    .chat-row.ai   { align-items: flex-start; }
+    .chat-bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: var(--radius-lg);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .chat-bubble.user {
+      background: rgba(0,212,255,0.15);
+      border: 1px solid rgba(0,212,255,0.3);
+      color: var(--text);
+    }
+    .chat-bubble.ai-success {
+      background: rgba(0,214,143,0.1);
+      border: 1px solid rgba(0,214,143,0.25);
+      color: var(--text);
+    }
+    .chat-bubble.ai-info {
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      color: var(--text);
+    }
+    .chat-label {
+      font-size: 11px; color: var(--text-muted); padding: 0 4px;
+    }
+    .quick-questions {
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .quick-q-btn {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1px solid rgba(0,212,255,0.3);
+      background: rgba(0,212,255,0.06);
+      color: var(--accent); font-size: 11px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .quick-q-btn:hover { background: rgba(0,212,255,0.15); }
+    .ai-chat-input-row {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px;
+    }
+    .ai-chat-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+    .ai-chat-input:focus { border-color: var(--accent); }
+    .ai-chat-input::placeholder { color: var(--text-muted); }
+    .ai-send-btn {
+      background: var(--accent); border: none; color: #0f1729;
+      border-radius: var(--radius); padding: 8px 16px;
+      font-size: 13px; font-weight: 700; transition: background 0.15s;
+    }
+    .ai-send-btn:hover { background: #00bfe8; }
+
+    /* =========================================================
+       FURNACE CARDS
+    ========================================================= */
+    .furnace-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .furnace-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+    .furnace-card.warn-border {
+      border-color: var(--warn);
+    }
+    .furnace-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .furnace-name { font-size: 15px; font-weight: 700; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .status-ok   { background: rgba(0,214,143,0.15); color: var(--success); }
+    .status-warn { background: rgba(255,107,53,0.15); color: var(--warn); }
+
+    .zone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .zone-cell {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+    }
+    .zone-cell .z-name { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .zone-cell .z-set  { font-size: 11px; color: var(--text-muted); }
+    .zone-cell .z-actual { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.1; }
+    .zone-cell .z-diff { font-size: 11px; margin-top: 3px; font-weight: 600; }
+    .z-diff.ok   { color: var(--success); }
+    .z-diff.warn { color: var(--warn); }
+    .z-diff.danger { color: var(--danger); }
+
+    .furnace-meta {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      font-size: 12px;
+    }
+    .furnace-meta-item .m-label { color: var(--text-muted); font-size: 11px; }
+    .furnace-meta-item .m-value { color: var(--text); font-weight: 600; margin-top: 2px; }
+
+    /* =========================================================
+       CHART CARD
+    ========================================================= */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .chart-card-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text);
+    }
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* =========================================================
+       AI OPTIMIZATION PANEL
+    ========================================================= */
+    .opt-layout {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 16px;
+    }
+    .opt-form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .form-input,
+    .form-select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus,
+    .form-select:focus { border-color: var(--accent); }
+    .input-unit {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .input-unit .form-input { flex: 1; }
+    .input-unit .unit-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+    .opt-result-card {
+      background: rgba(0,214,143,0.05);
+      border: 1px solid rgba(0,214,143,0.2);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .opt-result-title {
+      font-size: 14px; font-weight: 700; color: var(--success); margin-bottom: 16px;
+    }
+    .opt-table-wrap { margin-bottom: 16px; }
+    .opt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .opt-table th {
+      background: rgba(0,214,143,0.1);
+      padding: 8px 12px; text-align: left;
+      color: var(--success); font-size: 11px; font-weight: 600; text-transform: uppercase;
+      border-bottom: 1px solid rgba(0,214,143,0.2);
+    }
+    .opt-table td {
+      padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+    .opt-metrics {
+      display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .opt-metric {
+      flex: 1; min-width: 120px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .opt-metric .om-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .opt-metric .om-value { font-size: 18px; font-weight: 700; }
+    .om-value.accent  { color: var(--accent); }
+    .om-value.success { color: var(--success); }
+    .om-value.warn    { color: var(--warn); }
+
+    .past-records { margin-bottom: 16px; }
+    .past-record-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+    .past-record-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: var(--radius);
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      margin-bottom: 6px; font-size: 12px;
+    }
+    .pr-id { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+    .pr-detail { color: var(--text-muted); flex: 1; }
+    .pr-quality { font-weight: 600; }
+    .pr-quality.good { color: var(--success); }
+    .pr-quality.ok   { color: var(--accent); }
+
+    /* =========================================================
+       HIDDEN / VISIBLE
+    ========================================================= */
+    .main-panel { display: none; }
+    .main-panel.active { display: block; }
+    .sub-panel { display: none; }
+    .sub-panel.active { display: block; }
+
+    /* =========================================================
+       SCROLLBAR
+    ========================================================= */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* =========================================================
+       MISC UTILITIES
+    ========================================================= */
+    .text-accent  { color: var(--accent); }
+    .text-success { color: var(--success); }
+    .text-warn    { color: var(--warn); }
+    .text-danger  { color: var(--danger); }
+    .text-muted   { color: var(--text-muted); }
+    .fw-700 { font-weight: 700; }
+    .mt-8   { margin-top: 8px; }
+    .mt-16  { margin-top: 16px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ========================================================
+       SIDEBAR
+  ======================================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">🏭 태웅 제조AI</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item"><span class="icon">📊</span> AI 대시보드</a>
+      <a href="#" class="nav-item active"><span class="icon">📦</span> 입고배합관리</a>
+      <a href="#" class="nav-item active" style="padding-left:36px;font-size:12px;"><span class="icon">🔥</span> 가열공정관리</a>
+      <a href="#" class="nav-item"><span class="icon">🚚</span> 검사출하관리</a>
+      <a href="#" class="nav-item"><span class="icon">⚙️</span> 공정관리</a>
+      <a href="#" class="nav-item"><span class="icon">🤖</span> AI Agent 관리</a>
+      <a href="#" class="nav-item"><span class="icon">📈</span> KPI 관리</a>
+      <a href="#" class="nav-item"><span class="icon">🗄️</span> 데이터관리</a>
+      <a href="#" class="nav-item"><span class="icon">👥</span> 시스템관리</a>
+    </nav>
+  </aside>
+
+  <!-- ========================================================
+       MAIN AREA
+  ======================================================== -->
+  <div class="main-area">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-title">입고배합관리 / 가열공정관리</div>
+      <div class="header-right">
+        <span class="status-dot">
+          <span class="dot dot-on"></span>시스템 정상
+        </span>
+        <span id="live-clock" class="header-time">--:--:--</span>
+        <span style="color:var(--text-muted)">관리자</span>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- MAIN TABS -->
+      <div class="main-tabs">
+        <button class="main-tab-btn active" onclick="switchMain('incoming', this)">📦 입고배합관리</button>
+        <button class="main-tab-btn"        onclick="switchMain('heating',  this)">🔥 가열공정관리</button>
+      </div>
+
+      <!-- ====================================================
+           MAIN PANEL 1: 입고배합관리
+      ==================================================== -->
+      <div id="panel-incoming" class="main-panel active">
+
+        <!-- SUB TABS -->
+        <div class="sub-tabs">
+          <button class="sub-tab-btn active" onclick="switchSub('incoming', 'receipt', this)">입고관리</button>
+          <button class="sub-tab-btn"        onclick="switchSub('incoming', 'history', this)">원자재이력</button>
+          <button class="sub-tab-btn"        onclick="switchSub('incoming', 'data',    this)">데이터관리</button>
+          <button class="sub-tab-btn"        onclick="switchSub('incoming', 'supplier',this)">공급처분석</button>
+          <button class="sub-tab-btn"        onclick="switchSub('incoming', 'aiagent', this)">AI Agent</button>
+        </div>
+
+        <!-- SUB PANEL: 입고관리 -->
+        <div id="incoming-receipt" class="sub-panel active">
+
+          <!-- SUMMARY CARDS -->
+          <div class="summary-cards">
+            <div class="summary-card">
+              <div class="s-icon">📦</div>
+              <div>
+                <div class="s-value">5</div>
+                <div class="s-label">오늘 입고 건</div>
+              </div>
+            </div>
+            <div class="summary-card warn">
+              <div class="s-icon">⏳</div>
+              <div>
+                <div class="s-value">2</div>
+                <div class="s-label">검수 대기 건</div>
+              </div>
+            </div>
+            <div class="summary-card danger">
+              <div class="s-icon">❌</div>
+              <div>
+                <div class="s-value">1</div>
+                <div class="s-label">이번달 불합격 건</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILTER BAR -->
+          <div class="filter-bar">
+            <label>Heat No.</label>
+            <input type="text" placeholder="HN-2024-XXXX" style="width:140px;" />
+
+            <label>공급사</label>
+            <select style="width:110px;">
+              <option value="">전체</option>
+              <option>포스코</option>
+              <option>현대제철</option>
+              <option>동국제강</option>
+            </select>
+
+            <label>소재종류</label>
+            <select style="width:100px;">
+              <option value="">전체</option>
+              <option>SM45C</option>
+              <option>SCM440</option>
+              <option>STS304</option>
+              <option>SCM415</option>
+            </select>
+
+            <label>입고일</label>
+            <input type="date" value="2024-01-01" style="width:130px;" />
+            <span class="filter-sep">~</span>
+            <input type="date" value="2024-01-31" style="width:130px;" />
+
+            <label>검수상태</label>
+            <select style="width:90px;">
+              <option value="">전체</option>
+              <option>합격</option>
+              <option>대기</option>
+              <option>불합격</option>
+            </select>
+
+            <button class="btn-main accent" style="padding:7px 16px;font-size:12px;">🔍 검색</button>
+          </div>
+
+          <!-- TABLE -->
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Heat No.</th>
+                  <th>공급사</th>
+                  <th>강종</th>
+                  <th>중량(톤)</th>
+                  <th>C%</th>
+                  <th>Si%</th>
+                  <th>Mn%</th>
+                  <th>P%</th>
+                  <th>S%</th>
+                  <th>입고일</th>
+                  <th>검수상태</th>
+                  <th>LOT수</th>
+                  <th>조작</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-accent fw-700">HN-2024-1234</td>
+                  <td>포스코</td>
+                  <td><span class="badge badge-info">SM45C</span></td>
+                  <td>12.5</td>
+                  <td>0.43</td><td>0.24</td><td>0.71</td><td>0.015</td><td>0.008</td>
+                  <td class="text-muted">2024-01-12</td>
+                  <td><span class="badge badge-success">✅ 합격</span></td>
+                  <td class="fw-700">3</td>
+                  <td>
+                    <button class="btn-action secondary">상세</button>
+                    <button class="btn-action primary">LOT생성</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-accent fw-700">HN-2024-1233</td>
+                  <td>현대제철</td>
+                  <td><span class="badge badge-info">SCM440</span></td>
+                  <td>8.2</td>
+                  <td>0.41</td><td>0.28</td><td>0.78</td><td>0.012</td><td>0.007</td>
+                  <td class="text-muted">2024-01-12</td>
+                  <td><span class="badge badge-success">✅ 합격</span></td>
+                  <td class="fw-700">2</td>
+                  <td>
+                    <button class="btn-action secondary">상세</button>
+                    <button class="btn-action primary">LOT생성</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-accent fw-700">HN-2024-1232</td>
+                  <td>동국제강</td>
+                  <td><span class="badge badge-info">STS304</span></td>
+                  <td>15.0</td>
+                  <td>0.06</td><td>0.58</td><td>1.42</td><td>0.030</td><td>0.005</td>
+                  <td class="text-muted">2024-01-11</td>
+                  <td><span class="badge badge-warn">⏳ 대기</span></td>
+                  <td class="text-muted">-</td>
+                  <td>
+                    <button class="btn-action warn">검수</button>
+                    <button class="btn-action secondary">상세</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-accent fw-700">HN-2024-1231</td>
+                  <td>포스코</td>
+                  <td><span class="badge badge-info">SM45C</span></td>
+                  <td>10.0</td>
+                  <td>0.45</td><td>0.22</td><td>0.68</td><td>0.018</td><td>0.009</td>
+                  <td class="text-muted">2024-01-11</td>
+                  <td><span class="badge badge-success">✅ 합격</span></td>
+                  <td class="fw-700">3</td>
+                  <td>
+                    <button class="btn-action secondary">상세</button>
+                    <button class="btn-action primary">LOT생성</button>
+                  </td>
+                </tr>
+                <tr class="row-fail">
+                  <td class="text-accent fw-700">HN-2024-1230</td>
+                  <td>현대제철</td>
+                  <td><span class="badge badge-info">SCM415</span></td>
+                  <td>6.5</td>
+                  <td>0.14</td><td>0.21</td><td>0.80</td><td>0.011</td><td>0.006</td>
+                  <td class="text-muted">2024-01-10</td>
+                  <td><span class="badge badge-danger">❌ 불합격</span></td>
+                  <td class="text-muted">-</td>
+                  <td>
+                    <button class="btn-action secondary">상세</button>
+                    <button class="btn-action danger">재검토</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <button class="btn-main accent">+ 입고 등록</button>
+          </div>
+        </div><!-- /incoming-receipt -->
+
+        <!-- SUB PANEL: 원자재이력 (placeholder) -->
+        <div id="incoming-history" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">원자재이력 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: 데이터관리 (placeholder) -->
+        <div id="incoming-data" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">데이터관리 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: 공급처분석 (placeholder) -->
+        <div id="incoming-supplier" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">공급처분석 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: AI Agent -->
+        <div id="incoming-aiagent" class="sub-panel">
+          <div class="ai-panel">
+            <div class="ai-panel-header">
+              <div class="ai-panel-title">🤖 입고 AI Agent</div>
+              <div class="ai-panel-meta">
+                <span class="status-dot">
+                  <span class="dot dot-on"></span>
+                  <span class="text-success">온라인</span>
+                </span>
+                <span>신뢰도 평균: <strong class="text-accent">96.1%</strong></span>
+              </div>
+            </div>
+
+            <div class="ai-chat-body" id="incoming-chat-body">
+
+              <!-- 대화1 -->
+              <div class="chat-row user">
+                <div class="chat-label">사용자 · 14:23</div>
+                <div class="chat-bubble user">HN-2024-1234 제강 투입 가능한가요?</div>
+              </div>
+              <div class="chat-row ai">
+                <div class="chat-label">🤖 AI Agent · 14:23</div>
+                <div class="chat-bubble ai-success">
+                  ✅ <strong>투입 가능</strong> | 신뢰도: <strong class="text-success">96.3% (HIGH)</strong><br/>
+                  • 탄소 0.43% ✓ &nbsp;(기준 0.40~0.48%)<br/>
+                  • 황 0.008% ✓ &nbsp;(기준 ≤0.015%)<br/>
+                  • 공급사 포스코 최근 6개월 불량 0건 ✓<br/>
+                  <strong>배합 추천:</strong> 기존 배치 HN-2024-1198과 혼합 비율 <strong class="text-accent">35:65</strong> 권장<br/>
+                  <span class="text-muted" style="font-size:11px;">근거: 성분DB, 공급사이력DB</span>
+                </div>
+              </div>
+
+              <!-- 대화2 -->
+              <div class="chat-row user">
+                <div class="chat-label">사용자 · 14:31</div>
+                <div class="chat-bubble user">이번주 불합격 원자재 원인 분석해줘</div>
+              </div>
+              <div class="chat-row ai">
+                <div class="chat-label">🤖 AI Agent · 14:31</div>
+                <div class="chat-bubble ai-info">
+                  📊 <strong>이번주 불합격 1건 분석</strong><br/>
+                  • 대상: <strong class="text-accent">HN-2024-1230</strong> (현대제철 SCM415)<br/>
+                  • 불합격 사유: P 함량 <strong class="text-danger">0.032%</strong> — 기준(0.025%) 초과<br/>
+                  • 동일 공급사 최근 3개월 P 초과 이력: <strong class="text-warn">2건</strong><br/>
+                  <strong>AI 권고:</strong> 현대제철 SCM415 수입 검사 강화 필요, 대체 공급사 검토 권장<br/>
+                  <span class="text-muted" style="font-size:11px;">신뢰도: 88.7%</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="quick-questions">
+              <span style="font-size:11px;color:var(--text-muted);align-self:center;">빠른질문:</span>
+              <button class="quick-q-btn" onclick="insertQuickQ('incoming', '오늘 입고 현황')">오늘 입고 현황</button>
+              <button class="quick-q-btn" onclick="insertQuickQ('incoming', '불합격 원자재')">불합격 원자재</button>
+              <button class="quick-q-btn" onclick="insertQuickQ('incoming', '공급사 품질 순위')">공급사 품질 순위</button>
+            </div>
+
+            <div class="ai-chat-input-row">
+              <input type="text" class="ai-chat-input" id="incoming-chat-input" placeholder="원자재 관련 질문을 입력하세요..." />
+              <button class="ai-send-btn" onclick="sendChat('incoming')">전송</button>
+            </div>
+          </div>
+        </div><!-- /incoming-aiagent -->
+
+      </div><!-- /panel-incoming -->
+
+      <!-- ====================================================
+           MAIN PANEL 2: 가열공정관리
+      ==================================================== -->
+      <div id="panel-heating" class="main-panel">
+
+        <!-- SUB TABS -->
+        <div class="sub-tabs">
+          <button class="sub-tab-btn active" onclick="switchSub('heating', 'monitor',  this)">실시간모니터링</button>
+          <button class="sub-tab-btn"        onclick="switchSub('heating', 'condition',this)">작업조건</button>
+          <button class="sub-tab-btn"        onclick="switchSub('heating', 'history',  this)">공정이력</button>
+          <button class="sub-tab-btn"        onclick="switchSub('heating', 'analysis', this)">데이터분석</button>
+          <button class="sub-tab-btn"        onclick="switchSub('heating', 'aiopt',    this)">AI최적화</button>
+        </div>
+
+        <!-- SUB PANEL: 실시간모니터링 -->
+        <div id="heating-monitor" class="sub-panel active">
+
+          <!-- SUMMARY CARDS -->
+          <div class="summary-cards">
+            <div class="summary-card success">
+              <div class="s-icon">🔥</div>
+              <div>
+                <div class="s-value">2기</div>
+                <div class="s-label">가동중 가열로</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="s-icon">📋</div>
+              <div>
+                <div class="s-value">8</div>
+                <div class="s-label">현재 장입 LOT</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="s-icon">⚡</div>
+              <div>
+                <div class="s-value">2,847</div>
+                <div class="s-label">오늘 에너지 (kWh)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FURNACE CARDS -->
+          <div class="furnace-grid">
+
+            <!-- 가열로 #1 -->
+            <div class="furnace-card">
+              <div class="furnace-header">
+                <div class="furnace-name">🔥 가열로 #1</div>
+                <span class="status-badge status-ok">🟢 정상 가동</span>
+              </div>
+              <div class="zone-grid">
+                <div class="zone-cell">
+                  <div class="z-name">예열존</div>
+                  <div class="z-set text-muted">설정 850°C</div>
+                  <div class="z-actual">847°C</div>
+                  <div class="z-diff ok">✅ 편차 -3°C</div>
+                </div>
+                <div class="zone-cell">
+                  <div class="z-name">가열존 1</div>
+                  <div class="z-set text-muted">설정 1,150°C</div>
+                  <div class="z-actual">1,153°C</div>
+                  <div class="z-diff ok">✅ 편차 +3°C</div>
+                </div>
+                <div class="zone-cell">
+                  <div class="z-name">가열존 2</div>
+                  <div class="z-set text-muted">설정 1,250°C</div>
+                  <div class="z-actual">1,249°C</div>
+                  <div class="z-diff ok">✅ 편차 -1°C</div>
+                </div>
+                <div class="zone-cell">
+                  <div class="z-name">균열존</div>
+                  <div class="z-set text-muted">설정 1,200°C</div>
+                  <div class="z-actual">1,201°C</div>
+                  <div class="z-diff ok">✅ 편차 +1°C</div>
+                </div>
+              </div>
+              <div class="furnace-meta">
+                <div class="furnace-meta-item">
+                  <div class="m-label">체류시간</div>
+                  <div class="m-value">2시간 34분 / <span class="text-muted">목표 3시간</span></div>
+                </div>
+                <div class="furnace-meta-item">
+                  <div class="m-label">오늘 에너지</div>
+                  <div class="m-value text-accent">1,423 kWh</div>
+                </div>
+                <div class="furnace-meta-item" style="flex:100%">
+                  <div class="m-label">현재 장입</div>
+                  <div class="m-value">
+                    <span class="badge badge-info" style="margin-right:4px;">LOT-2024-0893</span>
+                    <span class="badge badge-info">LOT-2024-0894</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 가열로 #2 (경고) -->
+            <div class="furnace-card warn-border">
+              <div class="furnace-header">
+                <div class="furnace-name">🔥 가열로 #2</div>
+                <span class="status-badge status-warn">🟠 경고 — 균열존 온도 편차</span>
+              </div>
+              <div class="zone-grid">
+                <div class="zone-cell">
+                  <div class="z-name">예열존</div>
+                  <div class="z-set text-muted">설정 850°C</div>
+                  <div class="z-actual">852°C</div>
+                  <div class="z-diff ok">✅ 편차 +2°C</div>
+                </div>
+                <div class="zone-cell">
+                  <div class="z-name">가열존 1</div>
+                  <div class="z-set text-muted">설정 1,150°C</div>
+                  <div class="z-actual">1,148°C</div>
+                  <div class="z-diff ok">✅ 편차 -2°C</div>
+                </div>
+                <div class="zone-cell">
+                  <div class="z-name">가열존 2</div>
+                  <div class="z-set text-muted">설정 1,250°C</div>
+                  <div class="z-actual" class="text-warn">1,261°C</div>
+                  <div class="z-diff warn">🟠 편차 +11°C</div>
+                </div>
+                <div class="zone-cell" style="border-color:rgba(255,59,59,0.35);background:rgba(255,59,59,0.06);">
+                  <div class="z-name">균열존</div>
+                  <div class="z-set text-muted">설정 1,200°C</div>
+                  <div class="z-actual text-danger">1,215°C</div>
+                  <div class="z-diff danger">🔴 편차 +15°C (기준±10°C 초과)</div>
+                </div>
+              </div>
+              <div class="furnace-meta">
+                <div class="furnace-meta-item">
+                  <div class="m-label">체류시간</div>
+                  <div class="m-value">1시간 52분 / <span class="text-muted">목표 2시간 30분</span></div>
+                </div>
+                <div class="furnace-meta-item">
+                  <div class="m-label">오늘 에너지</div>
+                  <div class="m-value text-warn">1,424 kWh</div>
+                </div>
+                <div class="furnace-meta-item" style="flex:100%">
+                  <div class="m-label">현재 장입</div>
+                  <div class="m-value">
+                    <span class="badge badge-warn" style="margin-right:4px;">LOT-2024-0890</span>
+                    <span class="badge badge-warn">LOT-2024-0891</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /furnace-grid -->
+
+          <!-- TEMPERATURE TREND CHART -->
+          <div class="chart-card">
+            <div class="chart-card-title">가열로 #1 vs #2 균열존 온도 트렌드 (최근 30분)</div>
+            <div class="chart-wrap">
+              <canvas id="tempTrendChart"></canvas>
+            </div>
+          </div>
+
+        </div><!-- /heating-monitor -->
+
+        <!-- SUB PANEL: 작업조건 (placeholder) -->
+        <div id="heating-condition" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">작업조건 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: 공정이력 (placeholder) -->
+        <div id="heating-history" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">공정이력 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: 데이터분석 (placeholder) -->
+        <div id="heating-analysis" class="sub-panel">
+          <div class="chart-card" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <span class="text-muted">데이터분석 화면 — 추후 구현 예정</span>
+          </div>
+        </div>
+
+        <!-- SUB PANEL: AI최적화 -->
+        <div id="heating-aiopt" class="sub-panel">
+          <div class="opt-layout">
+
+            <!-- 입력 폼 -->
+            <div class="opt-form-card">
+              <div class="section-title" style="margin-bottom:18px;">🔧 가열 조건 입력</div>
+
+              <div class="form-group">
+                <label class="form-label">강종 선택</label>
+                <select class="form-select">
+                  <option selected>SM45C</option>
+                  <option>SCM440</option>
+                  <option>STS304</option>
+                  <option>SCM415</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">중량</label>
+                <div class="input-unit">
+                  <input type="number" class="form-input" value="5.2" />
+                  <span class="unit-label">톤</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">직경</label>
+                <div class="input-unit">
+                  <input type="number" class="form-input" value="350" />
+                  <span class="unit-label">mm</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">길이</label>
+                <div class="input-unit">
+                  <input type="number" class="form-input" value="2400" />
+                  <span class="unit-label">mm</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">현재 소재 온도</label>
+                <div class="input-unit">
+                  <input type="number" class="form-input" value="15" />
+                  <span class="unit-label">°C</span>
+                </div>
+              </div>
+
+              <div class="mt-16">
+                <button class="btn-main accent" style="width:100%;justify-content:center;padding:12px 20px;font-size:14px;" onclick="showOptResult()">
+                  🤖 AI 최적 조건 분석
+                </button>
+              </div>
+            </div>
+
+            <!-- AI 분석 결과 -->
+            <div class="opt-result-card" id="opt-result-panel">
+              <div class="opt-result-title">✅ AI 가열 최적화 결과 | 신뢰도: <strong>94.7% (HIGH)</strong></div>
+
+              <!-- 추천 프로파일 테이블 -->
+              <div class="opt-table-wrap">
+                <table class="opt-table">
+                  <thead>
+                    <tr>
+                      <th>구간</th>
+                      <th>설정온도</th>
+                      <th>승온속도</th>
+                      <th>체류시간</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>예열</strong></td>
+                      <td class="text-accent fw-700">850°C</td>
+                      <td>150°C/hr</td>
+                      <td>45분</td>
+                    </tr>
+                    <tr>
+                      <td><strong>가열 1</strong></td>
+                      <td class="text-accent fw-700">1,150°C</td>
+                      <td>200°C/hr</td>
+                      <td>60분</td>
+                    </tr>
+                    <tr>
+                      <td><strong>가열 2</strong></td>
+                      <td class="text-accent fw-700">1,250°C</td>
+                      <td>100°C/hr</td>
+                      <td>45분</td>
+                    </tr>
+                    <tr>
+                      <td><strong>균열</strong></td>
+                      <td class="text-accent fw-700">1,200°C</td>
+                      <td>-</td>
+                      <td>40분</td>
+                    </tr>
+                    <tr style="background:rgba(0,214,143,0.06);">
+                      <td colspan="3" style="font-weight:700;color:var(--success);">총 체류시간</td>
+                      <td style="font-weight:700;color:var(--success);">3시간 10분</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 지표 -->
+              <div class="opt-metrics">
+                <div class="opt-metric">
+                  <div class="om-label">예상 에너지 소비</div>
+                  <div class="om-value accent">487 kWh</div>
+                </div>
+                <div class="opt-metric">
+                  <div class="om-label">재가열 위험</div>
+                  <div class="om-value success">12.3% <span style="font-size:13px;">🟢 낮음</span></div>
+                </div>
+                <div class="opt-metric">
+                  <div class="om-label">품질 안정성 예측</div>
+                  <div class="om-value success">96.2% 🟢</div>
+                </div>
+              </div>
+
+              <!-- 유사 과거 실적 -->
+              <div class="past-records">
+                <div class="past-record-title">유사 과거 실적 (3건)</div>
+                <div class="past-record-item">
+                  <span class="pr-id">HN-2024-1180</span>
+                  <span class="pr-detail">SM45C · 5.0톤 · 실제 3시간 05분</span>
+                  <span class="pr-quality good">품질: 우수</span>
+                </div>
+                <div class="past-record-item">
+                  <span class="pr-id">HN-2024-1150</span>
+                  <span class="pr-detail">SM45C · 5.5톤 · 실제 3시간 18분</span>
+                  <span class="pr-quality good">품질: 우수</span>
+                </div>
+                <div class="past-record-item">
+                  <span class="pr-id">HN-2024-1098</span>
+                  <span class="pr-detail">SM45C · 4.8톤 · 실제 3시간 02분</span>
+                  <span class="pr-quality ok">품질: 양호</span>
+                </div>
+              </div>
+
+              <button class="btn-main success" style="width:100%;justify-content:center;padding:11px 20px;font-size:13px;">
+                최적 조건 가열로 전송
+              </button>
+            </div>
+
+          </div><!-- /opt-layout -->
+        </div><!-- /heating-aiopt -->
+
+      </div><!-- /panel-heating -->
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /shell -->
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+  /* ----------------------------------------------------------
+     LIVE CLOCK
+  ---------------------------------------------------------- */
+  function updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('live-clock').textContent = `${hh}:${mm}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ----------------------------------------------------------
+     MAIN TAB SWITCH
+  ---------------------------------------------------------- */
+  function switchMain(panelId, btn) {
+    // deactivate all main tab buttons
+    document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // hide all main panels
+    document.querySelectorAll('.main-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + panelId).classList.add('active');
+
+    // render chart if heating monitor is shown
+    if (panelId === 'heating') {
+      setTimeout(() => {
+        const subPanel = document.getElementById('heating-monitor');
+        if (subPanel && subPanel.classList.contains('active')) {
+          initTempChart();
+        }
+      }, 50);
+    }
+  }
+
+  /* ----------------------------------------------------------
+     SUB TAB SWITCH
+  ---------------------------------------------------------- */
+  function switchSub(mainId, subId, btn) {
+    // deactivate sibling sub tab buttons
+    const parentTabs = btn.closest('.sub-tabs');
+    parentTabs.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // find all sub-panels in same main panel and hide
+    const mainPanel = document.getElementById('panel-' + mainId);
+    mainPanel.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(mainId + '-' + subId).classList.add('active');
+
+    // init chart when heating monitor becomes active
+    if (mainId === 'heating' && subId === 'monitor') {
+      setTimeout(initTempChart, 50);
+    }
+  }
+
+  /* ----------------------------------------------------------
+     TEMPERATURE TREND CHART
+  ---------------------------------------------------------- */
+  let tempChart = null;
+
+  function initTempChart() {
+    const canvas = document.getElementById('tempTrendChart');
+    if (!canvas) return;
+
+    // destroy previous instance
+    if (tempChart) {
+      tempChart.destroy();
+      tempChart = null;
+    }
+
+    const labels = ['13:00', '13:05', '13:10', '13:15', '13:20', '13:25', '13:30'];
+    const data1  = [1200, 1201, 1200, 1202, 1199, 1201, 1201];
+    const data2  = [1201, 1203, 1206, 1209, 1211, 1213, 1215];
+
+    tempChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '가열로 #1 균열존',
+            data: data1,
+            borderColor: '#00d4ff',
+            backgroundColor: 'rgba(0,212,255,0.08)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#00d4ff',
+            tension: 0.3,
+            fill: false,
+          },
+          {
+            label: '가열로 #2 균열존',
+            data: data2,
+            borderColor: '#ff6b35',
+            backgroundColor: 'rgba(255,107,53,0.08)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#ff6b35',
+            tension: 0.3,
+            fill: false,
+          },
+          {
+            label: '상한 기준선 (1,210°C)',
+            data: new Array(7).fill(1210),
+            borderColor: 'rgba(255,59,59,0.7)',
+            borderWidth: 1.5,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 600 },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#8a9bbe',
+              font: { family: 'Noto Sans KR', size: 11 },
+              boxWidth: 16,
+              padding: 16,
+            },
+          },
+          tooltip: {
+            backgroundColor: '#1a2744',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: '#e2e8f0',
+            bodyColor: '#8a9bbe',
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}°C`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#8a9bbe', font: { family: 'Noto Sans KR', size: 11 } },
+          },
+          y: {
+            min: 1195,
+            max: 1220,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#8a9bbe',
+              font: { family: 'Noto Sans KR', size: 11 },
+              callback: v => v + '°C',
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /* ----------------------------------------------------------
+     AI CHAT — INCOMING
+  ---------------------------------------------------------- */
+  const aiResponses = {
+    incoming: [
+      "📊 분석 완료 | 신뢰도: 91.4% (HIGH) | 현재 입력하신 내용을 기반으로 AI 분석을 수행했습니다. 결과를 검토 후 적합한 조치를 취하시기 바랍니다.",
+      "✅ 조회 완료 | 요청하신 정보를 데이터베이스에서 조회했습니다. 추가 분석이 필요하시면 더 구체적인 조건을 입력해 주세요. | 신뢰도: 93.2%",
+      "⚠️ 주의 필요 | 신뢰도: 85.6% (MEDIUM) | 해당 조건에 대해 주의 깊은 검토가 필요합니다. 관련 이력 데이터와 비교 분석을 권장드립니다.",
+    ],
+    heating: [],
+  };
+  let responseIdx = { incoming: 0, heating: 0 };
+
+  function sendChat(panelId) {
+    const input  = document.getElementById(panelId + '-chat-input');
+    const body   = document.getElementById(panelId + '-chat-body');
+    const text   = input.value.trim();
+    if (!text) return;
+
+    // User bubble
+    const now = new Date();
+    const ts  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    const userRow = document.createElement('div');
+    userRow.className = 'chat-row user';
+    userRow.innerHTML = `
+      <div class="chat-label">사용자 · ${ts}</div>
+      <div class="chat-bubble user">${escapeHtml(text)}</div>
+    `;
+    body.appendChild(userRow);
+    input.value = '';
+
+    // AI bubble (after short delay)
+    setTimeout(() => {
+      const responses = aiResponses[panelId] || aiResponses.incoming;
+      const reply     = responses[responseIdx[panelId] % responses.length];
+      responseIdx[panelId]++;
+
+      const aiRow = document.createElement('div');
+      aiRow.className = 'chat-row ai';
+      aiRow.innerHTML = `
+        <div class="chat-label">🤖 AI Agent · ${ts}</div>
+        <div class="chat-bubble ai-info">${reply}</div>
+      `;
+      body.appendChild(aiRow);
+      body.scrollTop = body.scrollHeight;
+    }, 700);
+
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function insertQuickQ(panelId, text) {
+    const input = document.getElementById(panelId + '-chat-input');
+    input.value = text;
+    input.focus();
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[c])
+    );
+  }
+
+  // Enter key support for chat
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const t = e.target;
+      if (t.id === 'incoming-chat-input') sendChat('incoming');
+    }
+  });
+
+  /* ----------------------------------------------------------
+     AI OPTIMIZATION RESULT TOGGLE (demo)
+  ---------------------------------------------------------- */
+  function showOptResult() {
+    const panel = document.getElementById('opt-result-panel');
+    // Re-flash the border to indicate re-analysis
+    panel.style.transition = 'border-color 0.3s';
+    panel.style.borderColor = 'var(--accent)';
+    setTimeout(() => { panel.style.borderColor = ''; }, 800);
+  }
+
+  /* ----------------------------------------------------------
+     INIT: render chart on first load if monitor is visible
+  ---------------------------------------------------------- */
+  window.addEventListener('load', () => {
+    // chart is on heating tab which is hidden on load — no init needed
+  });
+</script>
+</body>
+</html>

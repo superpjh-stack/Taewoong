@@ -1,0 +1,2 @@
+- [API DB layering](api-db-layering.md) — route files mostly delegate to controllers/services; inline SQL lives in heating.ts, kpi.ts, data-management.ts, data-visualization.ts, ai-datasets.ts and the lots.ts /detail handler
+- [Schema vs code divergence](schema-code-divergence.md) — several queried columns/tables do not exist in the migrations; affects both correctness and index analysis

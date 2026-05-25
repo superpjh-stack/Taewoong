@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>태웅 제조AI 시스템 - 시스템관리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-base:#0f1729; --bg-card:#1a2744; --bg-sidebar:#111e38; --bg-header:#13203d;
+      --border:#243459; --accent:#00d4ff; --accent-dim:rgba(0,212,255,0.12);
+      --warn:#ff6b35; --warn-dim:rgba(255,107,53,0.15); --danger:#ff3b3b; --danger-dim:rgba(255,59,59,0.15);
+      --success:#00d68f; --success-dim:rgba(0,214,143,0.15);
+      --text-primary:#e8edf8; --text-secondary:#8fa3c7; --text-muted:#4d6080;
+      --sidebar-w:240px; --header-h:60px; --radius-sm:6px; --radius-md:10px; --shadow-card:0 4px 24px rgba(0,0,0,0.4);
+    }
+    html, body { height: 100%; }
+    body { font-family:'Noto Sans KR',sans-serif; background:var(--bg-base); color:var(--text-primary); display:flex; flex-direction:column; min-width:1280px; font-size:13px; line-height:1.5; }
+    .app-header { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:var(--bg-header); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px 0 0; z-index:100; }
+    .header-logo { width:var(--sidebar-w); display:flex; align-items:center; gap:10px; padding:0 20px; border-right:1px solid var(--border); height:100%; flex-shrink:0; }
+    .logo-icon { width:34px; height:34px; background:linear-gradient(135deg,var(--accent),#0090b8); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; }
+    .logo-text { font-weight:700; font-size:14px; }
+    .logo-sub { font-size:10px; color:var(--text-muted); margin-top:1px; }
+    .app-body { display:flex; margin-top:var(--header-h); flex:1; }
+    .sidebar { position:fixed; top:var(--header-h); left:0; bottom:0; width:var(--sidebar-w); background:var(--bg-sidebar); border-right:1px solid var(--border); overflow-y:auto; padding:12px 0; }
+    .nav-group-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; padding:8px 16px 4px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 16px; cursor:pointer; color:var(--text-secondary); font-size:13px; border-left:3px solid transparent; }
+    .nav-item:hover { background:rgba(0,212,255,0.05); color:var(--text-primary); }
+    .nav-item.active { background:var(--accent-dim); color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+    .main { margin-left:var(--sidebar-w); flex:1; padding:24px; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .page-title { font-size:20px; font-weight:700; }
+    .page-title span { color:var(--accent); }
+    .btn { padding:7px 16px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-size:12px; font-weight:600; font-family:inherit; }
+    .btn-primary { background:var(--accent); color:#0f1729; }
+    .btn-danger { background:var(--danger-dim); border:1px solid var(--danger); color:var(--danger); }
+    .btn-sm { padding:4px 10px; font-size:11px; }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-secondary); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .tabs { display:flex; gap:2px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+    .tab { padding:10px 20px; cursor:pointer; color:var(--text-secondary); border-bottom:2px solid transparent; font-size:13px; font-weight:500; margin-bottom:-1px; }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; box-shadow:var(--shadow-card); }
+    .card-title { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; font-weight:600; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    .filter-bar { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    .filter-select { background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); padding:7px 12px; border-radius:var(--radius-sm); font-size:12px; font-family:inherit; cursor:pointer; }
+    .filter-input { background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary); padding:7px 12px; border-radius:var(--radius-sm); font-size:12px; font-family:inherit; width:200px; }
+    .filter-input:focus { outline:none; border-color:var(--accent); }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { padding:10px 12px; text-align:left; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; white-space:nowrap; }
+    td { padding:10px 12px; border-bottom:1px solid rgba(36,52,89,0.5); vertical-align:middle; }
+    tr:hover td { background:rgba(0,212,255,0.03); }
+    .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
+    .badge-active { background:var(--success-dim); color:var(--success); border:1px solid var(--success); }
+    .badge-inactive { background:rgba(100,116,139,0.2); color:#94a3b8; border:1px solid #475569; }
+    .badge-admin { background:rgba(147,51,234,0.2); color:#c084fc; border:1px solid #9333ea; }
+    .badge-process { background:rgba(0,212,255,0.15); color:var(--accent); border:1px solid var(--accent); }
+    .badge-quality { background:rgba(0,214,143,0.15); color:var(--success); border:1px solid var(--success); }
+    .badge-viewer { background:rgba(100,116,139,0.15); color:#94a3b8; border:1px solid #475569; }
+    /* RBAC matrix */
+    .rbac-table th { white-space:nowrap; font-size:10px; }
+    .rbac-table td { text-align:center; }
+    .perm-check { color:var(--success); font-size:16px; }
+    .perm-x { color:var(--text-muted); font-size:14px; }
+    .perm-role-col { font-weight:700; text-align:left !important; color:var(--text-primary); }
+    /* Equipment layout mini map */
+    .factory-map { background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; }
+    .factory-row { display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .equip-mini {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:10px 14px; min-width:130px; text-align:center; cursor:pointer; transition:all 0.15s;
+    }
+    .equip-mini:hover { border-color:var(--accent); }
+    .equip-mini.running { border-color:var(--success); }
+    .equip-mini.idle { border-color:var(--text-muted); opacity:0.6; }
+    .equip-mini-icon { font-size:22px; margin-bottom:4px; }
+    .equip-mini-name { font-size:11px; font-weight:700; }
+    .equip-mini-status { font-size:10px; }
+    /* Audit log */
+    .log-type-create { color:var(--success); font-size:11px; font-weight:600; }
+    .log-type-update { color:var(--accent); font-size:11px; font-weight:600; }
+    .log-type-delete { color:var(--danger); font-size:11px; font-weight:600; }
+    .log-type-login { color:var(--text-muted); font-size:11px; font-weight:600; }
+    .log-diff { font-size:11px; color:var(--text-muted); }
+    .log-diff del { color:var(--danger); text-decoration:line-through; }
+    .log-diff ins { color:var(--success); text-decoration:none; }
+    /* Code master category tabs */
+    .cat-tabs { display:flex; gap:4px; margin-bottom:12px; }
+    .cat-tab { padding:5px 14px; border-radius:4px; cursor:pointer; font-size:12px; border:1px solid var(--border); color:var(--text-secondary); }
+    .cat-tab.active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
+    /* Toggle switch */
+    .switch { position:relative; display:inline-block; width:36px; height:20px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#243459; border-radius:20px; transition:.2s; }
+    .slider:before { position:absolute; content:""; width:14px; height:14px; left:3px; bottom:3px; background:#8fa3c7; border-radius:50%; transition:.2s; }
+    input:checked + .slider { background:var(--success); }
+    input:checked + .slider:before { transform:translateX(16px); background:#fff; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="logo-icon">T</div>
+      <div><div class="logo-text">TaeWoong MES</div><div class="logo-sub">제조AI 스마트공장</div></div>
+    </div>
+    <div style="flex:1;padding-left:24px;font-size:12px;color:var(--text-muted);">시스템관리 (관리자 전용)</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="background:rgba(147,51,234,0.2);border:1px solid #9333ea;color:#c084fc;padding:2px 8px;border-radius:4px;font-size:11px;">관리자</span>
+      <span style="font-size:13px;color:var(--accent);font-weight:600;" id="clock">--:--:--</span>
+      <div style="width:32px;height:32px;background:rgba(147,51,234,0.2);border:1px solid #9333ea;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#c084fc;">관</div>
+    </div>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="nav-group-label">모니터링</div>
+      <div class="nav-item"><span>📊</span>AI 대시보드</div>
+      <div class="nav-group-label">공정관리</div>
+      <div class="nav-item"><span>📦</span>입고배합관리</div>
+      <div class="nav-item"><span>🔥</span>가열공정</div>
+      <div class="nav-item"><span>⚒️</span>단조공정</div>
+      <div class="nav-item"><span>♨️</span>열처리공정</div>
+      <div class="nav-item"><span>🚢</span>검사출하</div>
+      <div class="nav-group-label">분석/관리</div>
+      <div class="nav-item"><span>🔗</span>LOT 계보</div>
+      <div class="nav-item"><span>🔬</span>품질검사</div>
+      <div class="nav-item"><span>📈</span>KPI 대시보드</div>
+      <div class="nav-item"><span>🤖</span>AI Agent</div>
+      <div class="nav-item active"><span>⚙️</span>시스템관리</div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <div class="page-title">시스템 <span>관리</span></div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">사용자·권한·장비·코드 마스터 관리 (관리자 전용)</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('users',this)">👤 사용자 관리</div>
+        <div class="tab" onclick="switchTab('rbac',this)">🔐 권한 매트릭스</div>
+        <div class="tab" onclick="switchTab('equip',this)">🏭 장비 마스터</div>
+        <div class="tab" onclick="switchTab('codes',this)">📋 코드 마스터</div>
+        <div class="tab" onclick="switchTab('audit',this)">📜 감사 로그</div>
+      </div>
+
+      <!-- ─── 사용자 관리 ─── -->
+      <div id="tab-users" class="tab-content active">
+        <div class="filter-bar">
+          <input class="filter-input" placeholder="이름 / 이메일 검색" />
+          <select class="filter-select"><option>전체 역할</option><option>admin</option><option>process</option><option>quality</option><option>viewer</option></select>
+          <select class="filter-select"><option>전체 상태</option><option>활성</option><option>비활성</option></select>
+          <button class="btn btn-primary" style="margin-left:auto;">+ 사용자 추가</button>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <table>
+            <thead>
+              <tr><th>이름</th><th>이메일</th><th>역할</th><th>부서</th><th>최근 접속</th><th>상태</th><th>액션</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;">김태웅</td>
+                <td style="color:var(--text-muted);">ktw@taewung.com</td>
+                <td><span class="badge badge-admin">admin</span></td>
+                <td>관리팀</td><td>05-20 14:22</td>
+                <td><span class="badge badge-active">활성</span></td>
+                <td><button class="btn btn-outline btn-sm">편집</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">이공정</td>
+                <td style="color:var(--text-muted);">process1@taewung.com</td>
+                <td><span class="badge badge-process">process</span></td>
+                <td>단조팀</td><td>05-20 13:55</td>
+                <td><span class="badge badge-active">활성</span></td>
+                <td><button class="btn btn-outline btn-sm">편집</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">박검사</td>
+                <td style="color:var(--text-muted);">quality1@taewung.com</td>
+                <td><span class="badge badge-quality">quality</span></td>
+                <td>품질팀</td><td>05-20 14:01</td>
+                <td><span class="badge badge-active">활성</span></td>
+                <td><button class="btn btn-outline btn-sm">편집</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">최열처리</td>
+                <td style="color:var(--text-muted);">ht1@taewung.com</td>
+                <td><span class="badge badge-process">process</span></td>
+                <td>열처리팀</td><td>05-19 17:30</td>
+                <td><span class="badge badge-active">활성</span></td>
+                <td><button class="btn btn-outline btn-sm">편집</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">정뷰어</td>
+                <td style="color:var(--text-muted);">viewer1@taewung.com</td>
+                <td><span class="badge badge-viewer">viewer</span></td>
+                <td>영업팀</td><td>05-18 09:15</td>
+                <td><span class="badge badge-inactive">비활성</span></td>
+                <td><button class="btn btn-outline btn-sm">편집</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── 권한 매트릭스 ─── -->
+      <div id="tab-rbac" class="tab-content">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div class="card-title" style="margin-bottom:0;">RBAC 권한 매트릭스</div>
+            <div style="font-size:11px;color:var(--text-muted);">✅ 허용 &nbsp; ✗ 거부</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="rbac-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;min-width:100px;">역할</th>
+                  <th>입고:읽기</th><th>입고:쓰기</th>
+                  <th>공정:읽기</th><th>공정:쓰기</th>
+                  <th>품질:읽기</th><th>품질:쓰기</th>
+                  <th>출하:읽기</th><th>출하:승인</th>
+                  <th>KPI:읽기</th>
+                  <th>AI:질의</th>
+                  <th>관리:쓰기</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="perm-role-col"><span class="badge badge-admin">admin</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                </tr>
+                <tr>
+                  <td class="perm-role-col"><span class="badge badge-process">process</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-x">✗</span></td>
+                </tr>
+                <tr>
+                  <td class="perm-role-col"><span class="badge badge-quality">quality</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-x">✗</span></td>
+                </tr>
+                <tr>
+                  <td class="perm-role-col"><span class="badge badge-viewer">viewer</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td><td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-check">✅</span></td>
+                  <td><span class="perm-x">✗</span></td>
+                  <td><span class="perm-x">✗</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:16px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary);">
+            <strong style="color:var(--accent);">Phase 1 DB 권한 설계와 동기화됨</strong> — 008_rbac.sql에 정의된 25개 권한을 기반으로 함.
+            역할 변경은 즉시 반영되며 JWT 토큰 재발급이 필요합니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 장비 마스터 ─── -->
+      <div id="tab-equip" class="tab-content">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+          <input class="filter-input" placeholder="장비코드 / 장비명 검색" />
+          <select class="filter-select"><option>전체 유형</option><option>가열로</option><option>프레스</option><option>열처리로</option><option>검사장비</option></select>
+          <button class="btn btn-primary" style="margin-left:auto;">+ 장비 등록</button>
+        </div>
+
+        <!-- 공장 레이아웃 미니맵 -->
+        <div class="factory-map" style="margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">공장 레이아웃 (클릭하여 상세 확인)</div>
+          <div class="factory-row">
+            <div style="font-size:10px;color:var(--text-muted);writing-mode:vertical-rl;padding-right:8px;align-self:center;">가열/열처리</div>
+            <div class="equip-mini running" onclick="alert('FURNACE-01\n상태: 가동중\n현재온도: 1,250°C\n최근점검: 2026-05-10')">
+              <div class="equip-mini-icon">🔥</div>
+              <div class="equip-mini-name">FURNACE-01</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+            <div class="equip-mini running" onclick="alert('FURNACE-02\n상태: 가동중\n현재온도: 1,180°C')">
+              <div class="equip-mini-icon">🔥</div>
+              <div class="equip-mini-name">FURNACE-02</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+            <div class="equip-mini running" onclick="alert('HT-01 담금질로\n상태: 가동중\n현재온도: 870°C')">
+              <div class="equip-mini-icon">♨️</div>
+              <div class="equip-mini-name">HT-01</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+            <div class="equip-mini running" onclick="alert('HT-02 뜨임로\n상태: 가동중\n현재온도: 580°C')">
+              <div class="equip-mini-icon">♨️</div>
+              <div class="equip-mini-name">HT-02</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+          </div>
+          <div class="factory-row">
+            <div style="font-size:10px;color:var(--text-muted);writing-mode:vertical-rl;padding-right:8px;align-self:center;">단조/검사</div>
+            <div class="equip-mini running" onclick="alert('PRESS-01 2,000ton\n상태: 가동중')">
+              <div class="equip-mini-icon">⚒️</div>
+              <div class="equip-mini-name">PRESS-01</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+            <div class="equip-mini running" onclick="alert('PRESS-02 3,000ton\n상태: 가동중')">
+              <div class="equip-mini-icon">⚒️</div>
+              <div class="equip-mini-name">PRESS-02</div>
+              <div class="equip-mini-status" style="color:var(--success);">● 가동중</div>
+            </div>
+            <div class="equip-mini idle" onclick="alert('INSP-UT-01 초음파검사기\n상태: 대기')">
+              <div class="equip-mini-icon">🔬</div>
+              <div class="equip-mini-name">INSP-UT-01</div>
+              <div class="equip-mini-status" style="color:var(--text-muted);">○ 대기</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">장비 목록</div>
+          <table>
+            <thead>
+              <tr><th>장비코드</th><th>장비명</th><th>유형</th><th>위치</th><th>상태</th><th>최근점검일</th><th>다음점검</th><th>가동률(월)</th><th>액션</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">FURNACE-01</td><td>가열로 #1</td><td>가열로</td><td>A동 1층</td>
+                <td><span class="badge badge-active">가동중</span></td><td>2026-05-10</td><td style="color:#ffd32a;">2026-06-10</td><td>94.2%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button><button class="btn btn-sm" style="background:var(--warn-dim);border:1px solid var(--warn);color:var(--warn);">점검</button></div></td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">FURNACE-02</td><td>가열로 #2</td><td>가열로</td><td>A동 1층</td>
+                <td><span class="badge badge-active">가동중</span></td><td>2026-05-08</td><td>2026-06-08</td><td>91.8%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button><button class="btn btn-sm" style="background:var(--warn-dim);border:1px solid var(--warn);color:var(--warn);">점검</button></div></td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">PRESS-01</td><td>단조프레스 #1</td><td>프레스</td><td>B동 1층</td>
+                <td><span class="badge badge-active">가동중</span></td><td>2026-05-15</td><td>2026-06-15</td><td>89.4%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button><button class="btn btn-sm" style="background:var(--warn-dim);border:1px solid var(--warn);color:var(--warn);">점검</button></div></td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">PRESS-02</td><td>단조프레스 #2</td><td>프레스</td><td>B동 1층</td>
+                <td><span class="badge badge-active">가동중</span></td><td>2026-05-12</td><td>2026-06-12</td><td>92.1%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button></div></td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">HT-01</td><td>열처리로 #1 (담금질)</td><td>열처리로</td><td>C동 1층</td>
+                <td><span class="badge badge-active">가동중</span></td><td>2026-05-05</td><td style="color:#ffd32a;">2026-06-05</td><td>88.6%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button></div></td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent);font-weight:600;">INSP-UT-01</td><td>초음파검사기 #1</td><td>검사장비</td><td>D동 검사실</td>
+                <td><span class="badge badge-inactive">대기</span></td><td>2026-04-28</td><td>2026-07-28</td><td>61.3%</td>
+                <td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm">편집</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── 코드 마스터 ─── -->
+      <div id="tab-codes" class="tab-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="cat-tabs" id="cat-tabs">
+            <div class="cat-tab active" onclick="switchCat('steel',this)">강종코드</div>
+            <div class="cat-tab" onclick="switchCat('defect',this)">불량코드</div>
+            <div class="cat-tab" onclick="switchCat('insptype',this)">검사유형</div>
+            <div class="cat-tab" onclick="switchCat('process',this)">공정코드</div>
+          </div>
+          <button class="btn btn-primary">+ 코드 추가</button>
+        </div>
+
+        <div class="card">
+          <div id="cat-steel">
+            <table>
+              <thead><tr><th>코드</th><th>코드명</th><th>설명</th><th>C(%)</th><th>Cr(%)</th><th>Mo(%)</th><th>정렬</th><th>사용</th><th>액션</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--accent);font-weight:600;">SCM440</td><td>크롬몰리브덴강</td><td>일반 단조용 구조용강</td><td>0.38~0.43</td><td>0.90~1.20</td><td>0.15~0.30</td><td>1</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">STS304</td><td>오스테나이트계 스테인리스</td><td>내식성 우수, 식품/화학용</td><td>≤0.08</td><td>18.0~20.0</td><td>—</td><td>2</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">SKD11</td><td>다이스강</td><td>고탄소 고크롬 냉간금형강</td><td>1.40~1.60</td><td>11.0~13.0</td><td>0.80~1.20</td><td>3</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">S45C</td><td>기계구조용 탄소강</td><td>범용 기계부품용</td><td>0.42~0.48</td><td>≤0.20</td><td>—</td><td>4</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="cat-defect" style="display:none;">
+            <table>
+              <thead><tr><th>코드</th><th>코드명</th><th>발생공정</th><th>심각도</th><th>처리기준</th><th>사용</th><th>액션</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--danger);font-weight:600;">DF-UT01</td><td>내부결함(UT)</td><td>검사</td><td style="color:var(--danger);">긴급</td><td>스크랩</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--warn);font-weight:600;">DF-DM01</td><td>치수불량</td><td>검사</td><td style="color:var(--warn);">높음</td><td>보완가공 or 스크랩</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--warn);font-weight:600;">DF-SC01</td><td>표면크랙</td><td>단조</td><td style="color:var(--warn);">높음</td><td>보완가공</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">DF-HD01</td><td>경도불량</td><td>열처리</td><td style="color:var(--accent);">보통</td><td>재열처리</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td><button class="btn btn-outline btn-sm">편집</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="cat-insptype" style="display:none;">
+            <table>
+              <thead><tr><th>코드</th><th>검사유형명</th><th>담당부서</th><th>장비</th><th>기준문서</th><th>사용</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--accent);font-weight:600;">INSP-UT</td><td>초음파탐상검사</td><td>품질팀</td><td>INSP-UT-01</td><td>KS B 0817</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">INSP-VT</td><td>외관검사</td><td>품질팀</td><td>육안</td><td>사내기준 QS-001</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">INSP-DM</td><td>치수검사</td><td>품질팀</td><td>CMM, 버니어</td><td>도면 공차기준</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">INSP-HRD</td><td>경도검사</td><td>품질팀</td><td>로크웰 경도계</td><td>HRC 기준</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="cat-process" style="display:none;">
+            <table>
+              <thead><tr><th>코드</th><th>공정명</th><th>순서</th><th>담당팀</th><th>표준시간(h)</th><th>사용</th></tr></thead>
+              <tbody>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-01</td><td>입고검수</td><td>1</td><td>품질팀</td><td>0.5</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-02</td><td>가열</td><td>2</td><td>단조팀</td><td>3.0</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-03</td><td>단조</td><td>3</td><td>단조팀</td><td>2.0</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-04</td><td>열처리</td><td>4</td><td>열처리팀</td><td>5.0</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-05</td><td>품질검사</td><td>5</td><td>품질팀</td><td>1.0</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                <tr><td style="color:var(--accent);font-weight:600;">PR-06</td><td>출하</td><td>6</td><td>물류팀</td><td>0.5</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 감사 로그 ─── -->
+      <div id="tab-audit" class="tab-content">
+        <div class="filter-bar">
+          <input type="date" class="filter-select" value="2026-05-20" />
+          <select class="filter-select"><option>전체 사용자</option><option>김태웅</option><option>이공정</option><option>박검사</option></select>
+          <select class="filter-select"><option>전체 작업유형</option><option>CREATE</option><option>UPDATE</option><option>DELETE</option><option>LOGIN</option></select>
+          <button class="btn btn-outline" style="margin-left:auto;">📤 내보내기</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>일시</th><th>사용자</th><th>IP</th><th>작업유형</th><th>대상</th><th>변경내용</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-20 14:22:31</td>
+                <td>김태웅 (admin)</td>
+                <td style="color:var(--text-muted);">192.168.1.10</td>
+                <td><span class="log-type-update">UPDATE</span></td>
+                <td>사용자 · user_id=5</td>
+                <td class="log-diff"><del>활성</del> → <ins>비활성</ins></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-20 14:01:15</td>
+                <td>박검사 (quality)</td>
+                <td style="color:var(--text-muted);">192.168.1.23</td>
+                <td><span class="log-type-create">CREATE</span></td>
+                <td>품질검사 · QI-2026-1241</td>
+                <td class="log-diff">L-2026-0341 초음파(UT) 검사 등록</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-20 13:55:02</td>
+                <td>이공정 (process)</td>
+                <td style="color:var(--text-muted);">192.168.1.15</td>
+                <td><span class="log-type-update">UPDATE</span></td>
+                <td>워크오더 · WO-2026-0841</td>
+                <td class="log-diff">상태: <del>대기</del> → <ins>진행중</ins></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-20 08:30:00</td>
+                <td>이공정 (process)</td>
+                <td style="color:var(--text-muted);">192.168.1.15</td>
+                <td><span class="log-type-login">LOGIN</span></td>
+                <td>인증</td>
+                <td class="log-diff">로그인 성공 (JWT 발급)</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-19 17:30:44</td>
+                <td>박검사 (quality)</td>
+                <td style="color:var(--text-muted);">192.168.1.23</td>
+                <td><span class="log-type-update">UPDATE</span></td>
+                <td>출하 · SH-2026-0412</td>
+                <td class="log-diff">상태: <del>ready</del> → <ins>approved</ins></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-muted);white-space:nowrap;">05-19 16:20:11</td>
+                <td>이공정 (process)</td>
+                <td style="color:var(--text-muted);">192.168.1.15</td>
+                <td><span class="log-type-create">CREATE</span></td>
+                <td>불량이력 · DF-2026-088</td>
+                <td class="log-diff">L-2026-0335 표면크랙(DF-SC01) 등록</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR',{hour12:false})
+    }
+    updateClock(); setInterval(updateClock, 1000)
+
+    function switchTab(name, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'))
+      el.classList.add('active')
+      document.getElementById('tab-'+name).classList.add('active')
+    }
+
+    function switchCat(name, el) {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'))
+      el.classList.add('active')
+      document.querySelectorAll('#tab-codes [id^="cat-"]').forEach(d => d.style.display = 'none')
+      document.getElementById('cat-'+name).style.display = 'block'
+    }
+  </script>
+</body>
+</html>

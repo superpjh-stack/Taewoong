@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>태웅 제조AI 시스템 - AI 대시보드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:       #0f1729;
+      --bg-card:       #1a2744;
+      --bg-card-hover: #1f2f52;
+      --bg-sidebar:    #111e38;
+      --bg-header:     #13203d;
+      --border:        #243459;
+      --accent:        #00d4ff;
+      --accent-dim:    rgba(0,212,255,0.12);
+      --accent-glow:   rgba(0,212,255,0.35);
+      --warn:          #ff6b35;
+      --warn-dim:      rgba(255,107,53,0.15);
+      --danger:        #ff3b3b;
+      --danger-dim:    rgba(255,59,59,0.15);
+      --success:       #00d68f;
+      --success-dim:   rgba(0,214,143,0.15);
+      --text-primary:  #e8edf8;
+      --text-secondary:#8fa3c7;
+      --text-muted:    #4d6080;
+      --sidebar-w:     240px;
+      --header-h:      60px;
+      --radius-sm:     6px;
+      --radius-md:     10px;
+      --radius-lg:     14px;
+      --shadow-card:   0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      min-width: 1280px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ─── HEADER ─── */
+    .app-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px 0 0;
+      z-index: 100;
+      gap: 0;
+    }
+    .header-logo {
+      width: var(--sidebar-w);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      border-right: 1px solid var(--border);
+      height: 100%;
+      flex-shrink: 0;
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), #0090b8);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .logo-sub  { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
+
+    .header-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--accent); letter-spacing: -0.3px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-datetime { font-size: 12px; color: var(--text-secondary); text-align: right; }
+    .header-datetime span { display: block; }
+    .header-datetime .time { font-size: 18px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+    .btn-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .btn-icon:hover { background: var(--bg-card-hover); }
+    .badge-dot {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 8px; height: 8px;
+      background: var(--danger);
+      border-radius: 50%;
+      border: 2px solid var(--bg-header);
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .user-chip:hover { background: var(--bg-card-hover); }
+    .user-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3a6fd8, var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .user-info-name { font-size: 12px; font-weight: 600; }
+    .user-info-role { font-size: 10px; color: var(--text-secondary); }
+
+    /* ─── LAYOUT ─── */
+    .app-body {
+      display: flex;
+      margin-top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      padding: 12px 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .nav-section { padding: 8px 0; }
+    .nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 16px;
+    }
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 8px 20px 4px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background 0.15s, color 0.15s;
+      color: var(--text-secondary);
+      font-size: 13px;
+      position: relative;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+    .nav-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+    .nav-sub { padding-left: 0; }
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 20px 7px 48px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 12px;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+    .nav-sub-item::before {
+      content: '';
+      position: absolute;
+      left: 30px;
+      width: 10px;
+      height: 1px;
+      background: var(--border);
+    }
+    .nav-sub-item:hover { background: rgba(255,255,255,0.03); color: var(--text-secondary); }
+    .nav-sub-item.active { color: var(--accent); font-weight: 500; }
+    .nav-sub-item.active::before { background: var(--accent); }
+
+    /* ─── MAIN CONTENT ─── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .main-content::-webkit-scrollbar { width: 6px; }
+    .main-content::-webkit-scrollbar-track { background: transparent; }
+    .main-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .page-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+    .btn-accent {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .btn-accent:hover { background: rgba(0,212,255,0.2); }
+
+    /* ─── TAB NAV ─── */
+    .tab-nav {
+      display: flex; gap: 2px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 4px;
+    }
+    .tab-btn {
+      padding: 7px 18px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+    .tab-btn.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(0,212,255,0.3);
+    }
+
+    /* ─── KPI CARDS ─── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .kpi-card:hover { border-color: rgba(0,212,255,0.3); transform: translateY(-1px); }
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-color, var(--accent));
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .kpi-card[data-color="warn"]  { --accent-color: var(--warn); }
+    .kpi-card[data-color="danger"]{ --accent-color: var(--danger); }
+    .kpi-card[data-color="success"]{ --accent-color: var(--success); }
+
+    .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+    .kpi-icon { font-size: 20px; opacity: 0.8; }
+    .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; color: var(--text-primary); }
+    .kpi-unit { font-size: 13px; font-weight: 400; color: var(--text-secondary); margin-left: 3px; }
+    .kpi-meta { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+    .kpi-badge {
+      font-size: 11px; font-weight: 600; padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .badge-success { background: var(--success-dim); color: var(--success); }
+    .badge-warn    { background: var(--warn-dim);    color: var(--warn); }
+    .badge-danger  { background: var(--danger-dim);  color: var(--danger); }
+    .badge-accent  { background: var(--accent-dim);  color: var(--accent); }
+    .badge-muted   { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+    .kpi-meta-text { font-size: 11px; color: var(--text-muted); }
+    .kpi-progress-bar {
+      margin-top: 10px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .kpi-progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent-color, var(--accent));
+      transition: width 0.8s ease;
+    }
+
+    /* ─── SECTION PANELS ─── */
+    .tab-panel { display: none; flex-direction: column; gap: 16px; }
+    .tab-panel.active { display: flex; }
+
+    .panel-row {
+      display: grid;
+      gap: 14px;
+    }
+    .panel-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .panel-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .panel-row.cols-32 { grid-template-columns: 3fr 2fr; }
+    .panel-row.cols-23 { grid-template-columns: 2fr 3fr; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .card-title .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+    .card-badge { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+    .card-body { padding: 16px 18px; }
+    .card-body-sm { padding: 12px 18px; }
+
+    /* ─── CHART CONTAINERS ─── */
+    .chart-wrap { position: relative; }
+    .chart-wrap canvas { max-width: 100%; }
+
+    /* ─── PROCESS PROGRESS BARS ─── */
+    .process-bar-list { display: flex; flex-direction: column; gap: 10px; }
+    .process-bar-item {}
+    .process-bar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .process-bar-label { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+    .process-bar-label .step-num {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--bg-base); border: 1px solid var(--border);
+      font-size: 10px; display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+    }
+    .process-bar-val { font-size: 12px; font-weight: 600; }
+    .process-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .process-bar-fill {
+      height: 100%;
+      border-radius: 8px;
+      position: relative;
+      transition: width 1s ease;
+    }
+    .process-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 20px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.3));
+    }
+
+    /* ─── DEVICE STATUS GRID ─── */
+    .device-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .device-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .device-card.status-normal { border-color: rgba(0,214,143,0.3); }
+    .device-card.status-warn   { border-color: rgba(255,107,53,0.4); }
+    .device-card.status-danger { border-color: rgba(255,59,59,0.4); }
+
+    .device-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .device-name { font-size: 13px; font-weight: 600; }
+    .device-status {
+      font-size: 10px; font-weight: 700; padding: 3px 8px;
+      border-radius: 12px; letter-spacing: 0.3px;
+    }
+    .device-status.normal { background: var(--success-dim); color: var(--success); }
+    .device-status.warn   { background: var(--warn-dim);    color: var(--warn); }
+    .device-status.danger { background: var(--danger-dim);  color: var(--danger); }
+
+    .gauge-container {
+      display: flex; flex-direction: column; align-items: center;
+      margin: 8px 0 12px;
+    }
+    .gauge-svg { width: 100px; height: 60px; }
+    .gauge-value-display { font-size: 20px; font-weight: 700; text-align: center; }
+    .gauge-unit { font-size: 10px; color: var(--text-muted); text-align: center; }
+
+    .device-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .device-metric { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 7px 10px; }
+    .device-metric-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+    .device-metric-val { font-size: 13px; font-weight: 600; }
+
+    /* ─── ALERT LIST ─── */
+    .alert-list { display: flex; flex-direction: column; gap: 8px; }
+    .alert-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid;
+    }
+    .alert-item.level-warn  { background: var(--warn-dim);   border-color: var(--warn); }
+    .alert-item.level-danger{ background: var(--danger-dim); border-color: var(--danger); }
+    .alert-item.level-info  { background: var(--accent-dim); border-color: var(--accent); }
+    .alert-icon { font-size: 15px; margin-top: 1px; }
+    .alert-content { flex: 1; }
+    .alert-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .alert-desc  { font-size: 11px; color: var(--text-secondary); }
+    .alert-time  { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* ─── TABLE ─── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 11px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(36,52,89,0.5);
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background 0.15s; }
+    .data-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+    .data-table tbody tr.row-warn td:first-child { border-left: 2px solid var(--warn); padding-left: 10px; }
+    .data-table tbody tr.row-danger td:first-child { border-left: 2px solid var(--danger); padding-left: 10px; }
+
+    .lot-num { font-family: monospace; font-size: 11px; color: var(--accent); font-weight: 600; }
+    .progress-cell { min-width: 100px; }
+    .progress-inline { display: flex; align-items: center; gap: 8px; }
+    .progress-bar-sm { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 5px; overflow: hidden; }
+    .progress-bar-sm-fill { height: 100%; border-radius: 5px; }
+    .progress-pct { font-size: 11px; font-weight: 600; width: 34px; text-align: right; }
+
+    /* ─── INSIGHT CARDS ─── */
+    .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .insight-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .insight-card:hover { transform: translateY(-2px); }
+    .insight-card.warn  { border-color: rgba(255,107,53,0.35); }
+    .insight-card.danger{ border-color: rgba(255,59,59,0.35); }
+    .insight-card.info  { border-color: rgba(0,212,255,0.35); }
+    .insight-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .insight-card.warn::before  { background: var(--warn); }
+    .insight-card.danger::before{ background: var(--danger); }
+    .insight-card.info::before  { background: var(--accent); }
+
+    .insight-type { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 7px; text-transform: uppercase; }
+    .insight-card.warn  .insight-type { color: var(--warn); }
+    .insight-card.danger .insight-type { color: var(--danger); }
+    .insight-card.info  .insight-type { color: var(--accent); }
+
+    .insight-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .insight-body  { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .insight-footer{ margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .insight-action {
+      font-size: 11px; font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 4px 10px;
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 12px;
+      transition: background 0.15s;
+    }
+    .insight-action:hover { background: var(--accent-dim); }
+    .insight-time { font-size: 10px; color: var(--text-muted); }
+
+    /* ─── QUALITY METRICS ROW ─── */
+    .quality-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .quality-metric-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .quality-metric-val { font-size: 22px; font-weight: 700; }
+    .quality-metric-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ─── NDT RESULT BARS ─── */
+    .ndt-list { display: flex; flex-direction: column; gap: 8px; }
+    .ndt-item { display: flex; align-items: center; gap: 10px; }
+    .ndt-label { font-size: 12px; width: 80px; color: var(--text-secondary); flex-shrink: 0; }
+    .ndt-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; }
+    .ndt-bar-fill { height: 100%; border-radius: 10px; }
+    .ndt-pass-fill { background: linear-gradient(to right, #00b87a, var(--success)); }
+    .ndt-fail-fill { background: linear-gradient(to right, #c0392b, var(--danger)); }
+    .ndt-val { font-size: 12px; font-weight: 600; width: 40px; text-align: right; flex-shrink: 0; }
+
+    /* ─── SHIMMER ANIMATION ─── */
+    @keyframes shimmer {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .live-dot {
+      display: inline-block;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      animation: shimmer 1.5s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--success);
+      margin-right: 5px;
+    }
+
+    /* ─── SCROLLBAR OVERRIDE ─── */
+    .scroll-x { overflow-x: auto; }
+    .scroll-x::-webkit-scrollbar { height: 4px; }
+    .scroll-x::-webkit-scrollbar-track { background: transparent; }
+    .scroll-x::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ─── LEGEND ─── */
+    .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+    .legend-item  { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+    .legend-dot   { width: 8px; height: 8px; border-radius: 50%; }
+    .legend-line  { width: 16px; height: 2px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="app-header">
+  <div class="header-logo">
+    <div class="logo-icon">🏭</div>
+    <div>
+      <div class="logo-text">태웅 제조AI</div>
+      <div class="logo-sub">Manufacturing AI System</div>
+    </div>
+  </div>
+  <div class="header-main">
+    <div class="header-title">AI 대시보드 — 실시간 생산·품질·설비·출하 현황</div>
+    <div class="header-right">
+      <div class="header-datetime">
+        <span class="time" id="clock">--:--:--</span>
+        <span id="dateStr">--</span>
+      </div>
+      <div class="btn-icon" title="알림">
+        🔔
+        <span class="badge-dot"></span>
+      </div>
+      <div class="btn-icon" title="새로고침" onclick="refreshAll()">🔄</div>
+      <div class="user-chip">
+        <div class="user-avatar">김</div>
+        <div>
+          <div class="user-info-name">김공정</div>
+          <div class="user-info-role">공정관리자</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ─── BODY ─── -->
+<div class="app-body">
+
+  <!-- ─── SIDEBAR ─── -->
+  <nav class="sidebar">
+    <div class="nav-section">
+      <div class="nav-item active">
+        <span class="nav-icon">📊</span>
+        <span>AI 대시보드</span>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item active" onclick="switchTab('production')">생산현황분석</div>
+        <div class="nav-sub-item" onclick="switchTab('quality')">품질현황분석</div>
+        <div class="nav-sub-item" onclick="switchTab('facility')">설비상태모니터링</div>
+        <div class="nav-sub-item" onclick="switchTab('shipment')">출하현황분석</div>
+      </div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">📦</span><span>입고배합관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">🔥</span><span>가열공정관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">🚚</span><span>검사출하관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">⚙️</span><span>공정관리</span>
+      </div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">🤖</span><span>AI Agent 관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">📈</span><span>KPI 관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">🗄️</span><span>데이터관리</span>
+      </div>
+      <div class="nav-item" onclick="navClick(this)">
+        <span class="nav-icon">👥</span><span>시스템관리</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── MAIN CONTENT ─── -->
+  <main class="main-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">AI 대시보드 <span style="font-size:13px;font-weight:400;color:var(--text-muted);">— <span class="live-dot"></span>실시간 현황</span></div>
+        <div class="page-subtitle">2026년 5월 20일 기준 · 주간 종합 현황판 · 데이터 자동 갱신 1분</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn">📥 보고서 다운로드</button>
+        <button class="btn">🖨️ 인쇄</button>
+        <button class="btn btn-accent">⚙️ 대시보드 설정</button>
+      </div>
+    </div>
+
+    <!-- Tab Nav -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('production')">📊 생산현황</button>
+      <button class="tab-btn" onclick="switchTab('quality')">🔬 품질현황</button>
+      <button class="tab-btn" onclick="switchTab('facility')">⚙️ 설비현황</button>
+      <button class="tab-btn" onclick="switchTab('shipment')">🚚 출하현황</button>
+    </div>
+
+    <!-- ─── KPI CARDS (always visible) ─── -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">오늘 생산량</div>
+          <div class="kpi-icon">🏗️</div>
+        </div>
+        <div><span class="kpi-value">127</span><span class="kpi-unit">LOT</span></div>
+        <div class="kpi-meta">
+          <span class="kpi-badge badge-accent">97.7%</span>
+          <span class="kpi-meta-text">목표 130 LOT 대비</span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" style="width:97.7%"></div>
+        </div>
+      </div>
+      <div class="kpi-card" data-color="success">
+        <div class="kpi-header">
+          <div class="kpi-label">품질 합격률</div>
+          <div class="kpi-icon">✅</div>
+        </div>
+        <div><span class="kpi-value">94.3</span><span class="kpi-unit">%</span></div>
+        <div class="kpi-meta">
+          <span class="kpi-badge badge-success">▲ +1.2%</span>
+          <span class="kpi-meta-text">전월 93.1% 대비</span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" style="width:94.3%;background:var(--success)"></div>
+        </div>
+      </div>
+      <div class="kpi-card" data-color="warn">
+        <div class="kpi-header">
+          <div class="kpi-label">설비 가동률</div>
+          <div class="kpi-icon">⚙️</div>
+        </div>
+        <div><span class="kpi-value">89.2</span><span class="kpi-unit">%</span></div>
+        <div class="kpi-meta">
+          <span class="kpi-badge badge-warn">OEE 82.1%</span>
+          <span class="kpi-meta-text">이번달 평균</span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" style="width:89.2%;background:var(--warn)"></div>
+        </div>
+      </div>
+      <div class="kpi-card" data-color="success">
+        <div class="kpi-header">
+          <div class="kpi-label">납기 준수율</div>
+          <div class="kpi-icon">📅</div>
+        </div>
+        <div><span class="kpi-value">96.8</span><span class="kpi-unit">%</span></div>
+        <div class="kpi-meta">
+          <span class="kpi-badge badge-success">누계 ▲</span>
+          <span class="kpi-meta-text">5월 누계 기준</span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" style="width:96.8%;background:var(--success)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: 생산현황 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel active" id="panel-production">
+      <div class="panel-row cols-32">
+        <!-- 공정별 진행률 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="dot"></span>
+              공정별 생산 진행률
+            </div>
+            <span class="kpi-badge badge-accent">오늘 기준</span>
+          </div>
+          <div class="card-body">
+            <div class="process-bar-list" id="processBarList">
+              <!-- JS rendered -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 병목 분석 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="dot" style="background:var(--warn);box-shadow:0 0 6px rgba(255,107,53,0.5)"></span>
+              병목 구간 분석
+            </div>
+            <span class="kpi-badge badge-warn">주의 1개소</span>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom:14px;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">AI 분석 결과 단조 공정에서 병목 발생. 현재 대기 LOT 7건.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="quality-metric-card">
+                  <div class="quality-metric-val" style="color:var(--warn)">7건</div>
+                  <div class="quality-metric-label">대기 LOT (단조)</div>
+                </div>
+                <div class="quality-metric-card">
+                  <div class="quality-metric-val" style="color:var(--text-primary)">4.2h</div>
+                  <div class="quality-metric-label">평균 대기시간</div>
+                </div>
+                <div class="quality-metric-card">
+                  <div class="quality-metric-val" style="color:var(--success)">23건</div>
+                  <div class="quality-metric-label">오늘 완료 LOT</div>
+                </div>
+                <div class="quality-metric-card">
+                  <div class="quality-metric-val" style="color:var(--accent)">3건</div>
+                  <div class="quality-metric-label">진행 중</div>
+                </div>
+              </div>
+            </div>
+            <div class="alert-list">
+              <div class="alert-item level-warn">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                  <div class="alert-title">단조공정 병목 감지</div>
+                  <div class="alert-desc">해머 프레스 #3 가동 저하로 생산 지연 예상. 예측 지연: 2.5h</div>
+                </div>
+                <div class="alert-time">09:41</div>
+              </div>
+              <div class="alert-item level-info">
+                <div class="alert-icon">ℹ️</div>
+                <div class="alert-content">
+                  <div class="alert-title">가열공정 정상 가동 전환</div>
+                  <div class="alert-desc">가열로 #2 온도 복구 완료. 생산 재개.</div>
+                </div>
+                <div class="alert-time">08:55</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 일별 생산량 추이 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="dot"></span>
+            일별 생산량 추이 (최근 7일)
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-line" style="background:#00d4ff"></div>실제 생산량</div>
+              <div class="legend-item"><div class="legend-line" style="background:rgba(255,255,255,0.2);border-top:2px dashed rgba(255,255,255,0.2)"></div>목표</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="productionTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: 품질현황 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-quality">
+      <!-- 상단 지표 -->
+      <div class="quality-metrics">
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--success)">94.3%</div>
+          <div class="quality-metric-label">기계적 성질 합격률</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--accent)">97.1%</div>
+          <div class="quality-metric-label">NDT 합격률</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--warn)">5.7%</div>
+          <div class="quality-metric-label">전체 불량률</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--danger)">8건</div>
+          <div class="quality-metric-label">이번달 재검사 LOT</div>
+        </div>
+      </div>
+
+      <div class="panel-row cols-2">
+        <!-- 불량 유형 파이 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--warn);box-shadow:0 0 6px rgba(255,107,53,0.4)"></span>불량 유형별 분포</div>
+            <span class="kpi-badge badge-warn">이번달 누계</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:220px;">
+              <canvas id="defectPieChart"></canvas>
+            </div>
+            <div class="chart-legend" style="justify-content:center;margin-top:14px;">
+              <div class="legend-item"><div class="legend-dot" style="background:#ff6b35"></div>치수불량</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#ff3b3b"></div>표면불량</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#ffd700"></div>물성미달</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>NDT불합격</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NDT 결과 + 공정별 불량률 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>NDT 검사 결과 현황</div>
+            <span class="kpi-badge badge-success">5월 누계</span>
+          </div>
+          <div class="card-body">
+            <div class="ndt-list" style="margin-bottom:18px;">
+              <div class="ndt-item">
+                <div class="ndt-label">초음파(UT)</div>
+                <div class="ndt-bar-track"><div class="ndt-bar-fill ndt-pass-fill" style="width:98.2%"></div></div>
+                <div class="ndt-val" style="color:var(--success)">98.2%</div>
+              </div>
+              <div class="ndt-item">
+                <div class="ndt-label">자분(MT)</div>
+                <div class="ndt-bar-track"><div class="ndt-bar-fill ndt-pass-fill" style="width:96.5%"></div></div>
+                <div class="ndt-val" style="color:var(--success)">96.5%</div>
+              </div>
+              <div class="ndt-item">
+                <div class="ndt-label">침투(PT)</div>
+                <div class="ndt-bar-track"><div class="ndt-bar-fill ndt-pass-fill" style="width:97.8%"></div></div>
+                <div class="ndt-val" style="color:var(--success)">97.8%</div>
+              </div>
+              <div class="ndt-item">
+                <div class="ndt-label">방사선(RT)</div>
+                <div class="ndt-bar-track"><div class="ndt-bar-fill ndt-pass-fill" style="width:95.1%"></div></div>
+                <div class="ndt-val" style="color:var(--success)">95.1%</div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">공정별 불량률 트렌드 (최근 6개월)</div>
+            <div class="chart-wrap" style="height:120px;">
+              <canvas id="defectTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 최근 불량 이력 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--danger);box-shadow:0 0 6px rgba(255,59,59,0.4)"></span>최근 불량 발생 이력</div>
+          <button class="btn" style="font-size:11px;padding:5px 10px;">전체 조회</button>
+        </div>
+        <div class="card-body-sm scroll-x">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>LOT번호</th><th>발생일시</th><th>공정</th><th>불량유형</th><th>불량수량</th><th>원인분석</th><th>처리상태</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-danger">
+                <td><span class="lot-num">LOT-2026-0892</span></td>
+                <td>2026-05-20 08:32</td>
+                <td>열처리</td>
+                <td><span class="kpi-badge badge-danger">물성미달</span></td>
+                <td>3 EA</td>
+                <td>열처리 온도 편차 ±15°C</td>
+                <td><span class="kpi-badge badge-warn">조사 중</span></td>
+              </tr>
+              <tr class="row-warn">
+                <td><span class="lot-num">LOT-2026-0881</span></td>
+                <td>2026-05-19 16:14</td>
+                <td>단조</td>
+                <td><span class="kpi-badge badge-warn">치수불량</span></td>
+                <td>2 EA</td>
+                <td>다이 마모 과다</td>
+                <td><span class="kpi-badge badge-success">처리완료</span></td>
+              </tr>
+              <tr>
+                <td><span class="lot-num">LOT-2026-0875</span></td>
+                <td>2026-05-19 10:05</td>
+                <td>검사</td>
+                <td><span class="kpi-badge badge-muted">표면불량</span></td>
+                <td>1 EA</td>
+                <td>산화 스케일 미제거</td>
+                <td><span class="kpi-badge badge-success">처리완료</span></td>
+              </tr>
+              <tr>
+                <td><span class="lot-num">LOT-2026-0862</span></td>
+                <td>2026-05-18 14:22</td>
+                <td>단조</td>
+                <td><span class="kpi-badge badge-muted">NDT불합격</span></td>
+                <td>1 EA</td>
+                <td>내부 크랙 (UT 검출)</td>
+                <td><span class="kpi-badge badge-success">처리완료</span></td>
+              </tr>
+              <tr>
+                <td><span class="lot-num">LOT-2026-0850</span></td>
+                <td>2026-05-17 09:50</td>
+                <td>가열</td>
+                <td><span class="kpi-badge badge-warn">치수불량</span></td>
+                <td>4 EA</td>
+                <td>가열 불균일 (가열로 #2)</td>
+                <td><span class="kpi-badge badge-success">처리완료</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: 설비현황 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-facility">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot"></span>주요 설비 실시간 상태</div>
+          <div style="display:flex;gap:8px;">
+            <span class="kpi-badge badge-success">● 정상 4</span>
+            <span class="kpi-badge badge-warn">● 주의 1</span>
+            <span class="kpi-badge badge-danger">● 위험 0</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="device-grid" id="deviceGrid">
+            <!-- JS rendered -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 이상 감지 알림 -->
+      <div class="panel-row cols-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="dot" style="background:var(--warn);box-shadow:0 0 6px rgba(255,107,53,0.4)"></span>
+              이상 감지 알림
+            </div>
+            <span class="kpi-badge badge-warn">오늘 3건</span>
+          </div>
+          <div class="card-body">
+            <div class="alert-list">
+              <div class="alert-item level-warn">
+                <div class="alert-icon">🌡️</div>
+                <div class="alert-content">
+                  <div class="alert-title">[가열로 #2] 온도 편차 주의</div>
+                  <div class="alert-desc">설정온도 1,250°C 대비 실측 1,237°C. 편차 -13°C 감지. AI 예측: 30분 내 복구 가능</div>
+                </div>
+                <div class="alert-time">10:15</div>
+              </div>
+              <div class="alert-item level-warn">
+                <div class="alert-icon">📳</div>
+                <div class="alert-content">
+                  <div class="alert-title">[해머 프레스 #3] 진동값 상승</div>
+                  <div class="alert-desc">베어링 진동 2.8mm/s → 4.1mm/s 증가. 정기점검 권고 (기준치 5.0mm/s)</div>
+                </div>
+                <div class="alert-time">09:38</div>
+              </div>
+              <div class="alert-item level-info">
+                <div class="alert-icon">⚡</div>
+                <div class="alert-content">
+                  <div class="alert-title">[열처리로 #1] 전류 정상 복구</div>
+                  <div class="alert-desc">08:20 발생 전류 이상값 정상 범위 복구 완료. 가동 재개.</div>
+                </div>
+                <div class="alert-time">08:47</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 설비 가동 현황 차트 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>설비별 OEE 현황</div>
+            <span class="kpi-badge badge-muted">이번달 누계</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:200px;">
+              <canvas id="oeeBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 가동 이력 테이블 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot"></span>설비 가동/정지 이력 (오늘)</div>
+          <button class="btn" style="font-size:11px;padding:5px 10px;">전체 이력</button>
+        </div>
+        <div class="card-body-sm scroll-x">
+          <table class="data-table">
+            <thead>
+              <tr><th>설비명</th><th>이벤트</th><th>발생시각</th><th>종료시각</th><th>지속시간</th><th>원인</th><th>조치</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-warn">
+                <td>가열로 #2</td>
+                <td><span class="kpi-badge badge-warn">온도이상</span></td>
+                <td>10:15</td><td>진행중</td><td>—</td>
+                <td>버너 점화 불량</td>
+                <td>AI 자동 알림 발송</td>
+              </tr>
+              <tr>
+                <td>열처리로 #1</td>
+                <td><span class="kpi-badge badge-success">정지→가동</span></td>
+                <td>08:20</td><td>08:47</td><td>27분</td>
+                <td>전류 이상</td>
+                <td>MCB 리셋 후 재기동</td>
+              </tr>
+              <tr>
+                <td>해머 프레스 #3</td>
+                <td><span class="kpi-badge badge-muted">예방점검</span></td>
+                <td>07:00</td><td>07:30</td><td>30분</td>
+                <td>정기 윤활 점검</td>
+                <td>점검 완료</td>
+              </tr>
+              <tr>
+                <td>가열로 #1</td>
+                <td><span class="kpi-badge badge-success">정상가동</span></td>
+                <td>06:30</td><td>—</td><td>계속</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: 출하현황 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-shipment">
+      <!-- KPI -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--success)">96.8%</div>
+          <div class="quality-metric-label">납기 준수율 (5월 누계)</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--text-primary)">47건</div>
+          <div class="quality-metric-label">이번달 출하 완료</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--warn)">3건</div>
+          <div class="quality-metric-label">납기 리스크 LOT</div>
+        </div>
+        <div class="quality-metric-card">
+          <div class="quality-metric-val" style="color:var(--accent)">18건</div>
+          <div class="quality-metric-label">출하 예정 (잔여)</div>
+        </div>
+      </div>
+
+      <!-- 출하 현황 테이블 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot"></span>출하 LOT 현황</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" style="font-size:11px;padding:5px 10px;">필터</button>
+            <button class="btn btn-accent" style="font-size:11px;padding:5px 10px;">📤 엑셀 출력</button>
+          </div>
+        </div>
+        <div class="card-body-sm scroll-x">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>LOT번호</th>
+                <th>고객사</th>
+                <th>제품명</th>
+                <th>수량</th>
+                <th>예정 출하일</th>
+                <th>현재 진행률</th>
+                <th>납기상태</th>
+              </tr>
+            </thead>
+            <tbody id="shipmentTableBody">
+              <!-- JS rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 납기 리스크 상세 + 고객별 차트 -->
+      <div class="panel-row cols-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="dot" style="background:var(--danger);box-shadow:0 0 6px rgba(255,59,59,0.4)"></span>
+              납기 리스크 상세
+            </div>
+            <span class="kpi-badge badge-danger">위험 1 · 주의 2</span>
+          </div>
+          <div class="card-body">
+            <div class="alert-list">
+              <div class="alert-item level-danger">
+                <div class="alert-icon">🚨</div>
+                <div class="alert-content">
+                  <div class="alert-title">LOT-2026-0892 납기 위험</div>
+                  <div class="alert-desc">고객: 현대중공업 | 출하일 5/22 | 현재 열처리 중 불량 발생. AI 예측 납기 지연 +2일</div>
+                </div>
+                <div class="alert-time">D-2</div>
+              </div>
+              <div class="alert-item level-warn">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                  <div class="alert-title">LOT-2026-0901 납기 주의</div>
+                  <div class="alert-desc">고객: 두산에너빌리티 | 출하일 5/25 | 검사 대기 1일 지연. 현재 진행률 72%</div>
+                </div>
+                <div class="alert-time">D-5</div>
+              </div>
+              <div class="alert-item level-warn">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                  <div class="alert-title">LOT-2026-0908 납기 주의</div>
+                  <div class="alert-desc">고객: 삼성중공업 | 출하일 5/27 | 단조 병목 대기 중. 진행률 45%</div>
+                </div>
+                <div class="alert-time">D-7</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 고객별 현황 차트 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>고객사별 출하 현황</div>
+            <span class="kpi-badge badge-muted">5월 누계</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:200px;">
+              <canvas id="customerBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── AI 인사이트 패널 (항상 표시) ─── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span style="font-size:16px;">🤖</span>
+          오늘의 AI 분석 결과
+          <span class="kpi-badge badge-accent" style="font-size:10px;">2026-05-20 10:30 업데이트</span>
+        </div>
+        <button class="btn btn-accent" style="font-size:11px;padding:5px 12px;">AI Agent 상세 보기</button>
+      </div>
+      <div class="card-body">
+        <div class="insight-grid">
+          <div class="insight-card warn">
+            <div class="insight-type">⚠️ 설비 이상 감지</div>
+            <div class="insight-title">가열로 #2 온도 편차 주의</div>
+            <div class="insight-body">
+              가열로 #2의 실측 온도(1,237°C)가 설정치(1,250°C) 대비 -13°C 편차를 보이고 있습니다. 최근 3시간 추세 분석 결과 버너 점화 장치 노후화 가능성이 73% 확률로 예측됩니다. 단기 조치로 버너 점검 후 온도 프로파일 재보정을 권장합니다.
+            </div>
+            <div class="insight-footer">
+              <div class="insight-time">10:15 감지</div>
+              <div class="insight-action">조치 요청</div>
+            </div>
+          </div>
+          <div class="insight-card danger">
+            <div class="insight-type">🚨 납기 리스크</div>
+            <div class="insight-title">LOT-2026-0892 납기 위험 감지</div>
+            <div class="insight-body">
+              현대중공업 향 LOT-2026-0892가 열처리 공정에서 물성미달 불량 3EA 발생으로 재작업이 필요합니다. AI 시뮬레이션 결과 현 속도로는 예정 출하일(5/22)을 2일 초과할 확률이 88%입니다. 즉시 고객사 납기 조정 또는 긴급 작업 배정이 필요합니다.
+            </div>
+            <div class="insight-footer">
+              <div class="insight-time">08:32 감지</div>
+              <div class="insight-action">긴급 처리</div>
+            </div>
+          </div>
+          <div class="insight-card info">
+            <div class="insight-type">📉 품질 트렌드</div>
+            <div class="insight-title">공급사 A 소재 품질 저하 감지</div>
+            <div class="insight-body">
+              최근 2주 공급사 A (강재 SCM440) 입고 소재에서 경도 분포 편차가 HRC ±3.5 수준으로 관리 한계 (±2.0)를 초과하는 추세가 감지됩니다. 해당 소재 사용 LOT의 물성 불합격률이 전월 대비 +2.3% 상승. 공급사 품질 협의 또는 대체 소재 검토를 권장합니다.
+            </div>
+            <div class="insight-footer">
+              <div class="insight-time">어제 분석</div>
+              <div class="insight-action">상세 분석</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('dateStr').textContent =
+    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${['일','월','화','수','목','금','토'][now.getDay()]})`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ─── NAV ───
+function navClick(el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── TABS ───
+function switchTab(tab) {
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    const tabs = ['production','quality','facility','shipment'];
+    btn.classList.toggle('active', tabs[i] === tab);
+  });
+  // Tab panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  // Sub nav items
+  document.querySelectorAll('.nav-sub-item').forEach((item, i) => {
+    const tabs = ['production','quality','facility','shipment'];
+    item.classList.toggle('active', tabs[i] === tab);
+  });
+  // Lazy-render charts on first switch
+  renderChartsForTab(tab);
+}
+
+// ─── PROCESS BARS ───
+const processData = [
+  { name: '입고', step: '01', done: 38,  total: 38,  color: '#00d68f' },
+  { name: '가열', step: '02', done: 35,  total: 38,  color: '#00d4ff' },
+  { name: '단조', step: '03', done: 28,  total: 35,  color: '#ff6b35' },
+  { name: '열처리', step: '04', done: 25,  total: 28,  color: '#00d4ff' },
+  { name: '검사', step: '05', done: 22,  total: 25,  color: '#00d68f' },
+  { name: '출하', step: '06', done: 20,  total: 22,  color: '#00d68f' },
+];
+
+function renderProcessBars() {
+  const container = document.getElementById('processBarList');
+  container.innerHTML = processData.map(p => {
+    const pct = Math.round((p.done / p.total) * 100);
+    const isBotleneck = p.name === '단조';
+    return `
+      <div class="process-bar-item">
+        <div class="process-bar-header">
+          <div class="process-bar-label">
+            <span class="step-num">${p.step}</span>
+            ${p.name} 공정
+            ${isBotleneck ? '<span class="kpi-badge badge-warn" style="font-size:9px;padding:1px 5px;">병목</span>' : ''}
+          </div>
+          <div class="process-bar-val" style="color:${p.color}">${p.done} / ${p.total} LOT (${pct}%)</div>
+        </div>
+        <div class="process-bar-track">
+          <div class="process-bar-fill" style="width:${pct}%;background:${p.color}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+renderProcessBars();
+
+// ─── DEVICE GRID ───
+const devices = [
+  {
+    name: '가열로 #1', type: '가열로', status: 'normal',
+    temp: 1252, setTemp: 1250,
+    metrics: [
+      { label: '버너 압력', val: '2.4 bar' },
+      { label: '노내 분위기', val: '환원성' },
+      { label: '연속가동', val: '18.5 h' },
+      { label: '소비전력', val: '142 kW' },
+    ]
+  },
+  {
+    name: '가열로 #2', type: '가열로', status: 'warn',
+    temp: 1237, setTemp: 1250,
+    metrics: [
+      { label: '버너 압력', val: '2.1 bar' },
+      { label: '노내 분위기', val: '편차↑' },
+      { label: '연속가동', val: '6.2 h' },
+      { label: '소비전력', val: '138 kW' },
+    ]
+  },
+  {
+    name: '열처리로 #1', type: '열처리로', status: 'normal',
+    temp: 882, setTemp: 880,
+    metrics: [
+      { label: '냉각방식', val: '유냉각' },
+      { label: '로드량', val: '4.2 ton' },
+      { label: '연속가동', val: '12.1 h' },
+      { label: '소비전력', val: '210 kW' },
+    ]
+  },
+  {
+    name: '해머 프레스 #1', type: '단조기', status: 'normal',
+    temp: null,
+    metrics: [
+      { label: '타격회수', val: '1,240 회' },
+      { label: '진동값', val: '2.1 mm/s' },
+      { label: '연속가동', val: '9.5 h' },
+      { label: '소비전력', val: '320 kW' },
+    ]
+  },
+  {
+    name: '해머 프레스 #3', type: '단조기', status: 'warn',
+    temp: null,
+    metrics: [
+      { label: '타격회수', val: '987 회' },
+      { label: '진동값', val: '4.1 mm/s ↑' },
+      { label: '연속가동', val: '7.1 h' },
+      { label: '소비전력', val: '315 kW' },
+    ]
+  },
+  {
+    name: '3D 측정기 #1', type: '검사장비', status: 'normal',
+    temp: null,
+    metrics: [
+      { label: '검사건수', val: '34 EA' },
+      { label: '합격율', val: '97.1 %' },
+      { label: '가동시간', val: '8.0 h' },
+      { label: '상태', val: '정상' },
+    ]
+  },
+];
+
+function drawGauge(canvas, value, min, max, color) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const cx = W/2, cy = H * 0.9;
+  const r = Math.min(W, H*2) * 0.4;
+  const startAngle = Math.PI;
+  const endAngle   = 2 * Math.PI;
+  const pct = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  const valAngle = startAngle + pct * Math.PI;
+
+  // Track
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, endAngle);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Fill
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, valAngle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Glow
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, valAngle - 0.05, valAngle);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function renderDeviceGrid() {
+  const grid = document.getElementById('deviceGrid');
+  grid.innerHTML = devices.map((d, idx) => {
+    const statusLabel = { normal:'정상', warn:'주의', danger:'위험' }[d.status];
+    const statusColor = { normal:'var(--success)', warn:'var(--warn)', danger:'var(--danger)' }[d.status];
+    const hasGauge = d.temp !== null;
+    return `
+      <div class="device-card status-${d.status}">
+        <div class="device-card-header">
+          <div class="device-name">${d.name}</div>
+          <div class="device-status ${d.status}">${statusLabel}</div>
+        </div>
+        ${hasGauge ? `
+        <div class="gauge-container">
+          <canvas class="gauge-svg" id="gauge-${idx}" width="120" height="72"></canvas>
+          <div class="gauge-value-display" style="color:${statusColor}">${d.temp.toLocaleString()}°C</div>
+          <div class="gauge-unit">설정 ${d.setTemp.toLocaleString()}°C</div>
+        </div>` : `
+        <div style="height:24px;display:flex;align-items:center;justify-content:center;margin:6px 0;">
+          <span style="font-size:11px;color:var(--text-muted)">${d.type}</span>
+        </div>`}
+        <div class="device-metrics">
+          ${d.metrics.map(m => `
+            <div class="device-metric">
+              <div class="device-metric-label">${m.label}</div>
+              <div class="device-metric-val" style="${m.val.includes('↑') ? 'color:var(--warn)' : ''}">${m.val}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Draw gauges
+  devices.forEach((d, idx) => {
+    if (d.temp !== null) {
+      const canvas = document.getElementById('gauge-' + idx);
+      if (canvas) {
+        const isHeat = d.type === '가열로';
+        const min = isHeat ? 1150 : 800;
+        const max = isHeat ? 1350 : 950;
+        const color = d.status === 'normal' ? '#00d68f' : d.status === 'warn' ? '#ff6b35' : '#ff3b3b';
+        drawGauge(canvas, d.temp, min, max, color);
+      }
+    }
+  });
+}
+renderDeviceGrid();
+
+// ─── SHIPMENT TABLE ───
+const shipments = [
+  { lot:'LOT-2026-0892', customer:'현대중공업',   product:'플랜지 (SCM440)',     qty:'24 EA', date:'2026-05-22', pct:62,  status:'danger' },
+  { lot:'LOT-2026-0901', customer:'두산에너빌리티',product:'샤프트 (SNC836)',     qty:'12 EA', date:'2026-05-25', pct:72,  status:'warn' },
+  { lot:'LOT-2026-0908', customer:'삼성중공업',   product:'링기어 (SCr420)',     qty:'8 EA',  date:'2026-05-27', pct:45,  status:'warn' },
+  { lot:'LOT-2026-0915', customer:'한화오션',     product:'크랭크샤프트 (S45C)', qty:'6 EA',  date:'2026-05-29', pct:88,  status:'normal' },
+  { lot:'LOT-2026-0921', customer:'현대중공업',   product:'커플링 (SCM415)',     qty:'30 EA', date:'2026-05-30', pct:95,  status:'normal' },
+  { lot:'LOT-2026-0928', customer:'LS일렉트릭',  product:'스핀들 (SM45C)',      qty:'18 EA', date:'2026-06-02', pct:35,  status:'normal' },
+  { lot:'LOT-2026-0934', customer:'두산에너빌리티',product:'허브 (SCM440)',      qty:'10 EA', date:'2026-06-05', pct:20,  status:'normal' },
+  { lot:'LOT-2026-0940', customer:'HD현대',       product:'디스크 (SNC836)',     qty:'15 EA', date:'2026-06-08', pct:10,  status:'normal' },
+];
+
+function renderShipmentTable() {
+  const tbody = document.getElementById('shipmentTableBody');
+  tbody.innerHTML = shipments.map(s => {
+    const rowClass = s.status === 'danger' ? 'row-danger' : s.status === 'warn' ? 'row-warn' : '';
+    const badgeClass = s.status === 'danger' ? 'badge-danger' : s.status === 'warn' ? 'badge-warn' : 'badge-success';
+    const badgeText  = s.status === 'danger' ? '위험' : s.status === 'warn' ? '주의' : '정상';
+    const barColor   = s.status === 'danger' ? '#ff3b3b' : s.status === 'warn' ? '#ff6b35' : '#00d68f';
+    return `
+      <tr class="${rowClass}">
+        <td><span class="lot-num">${s.lot}</span></td>
+        <td>${s.customer}</td>
+        <td>${s.product}</td>
+        <td>${s.qty}</td>
+        <td>${s.date}</td>
+        <td class="progress-cell">
+          <div class="progress-inline">
+            <div class="progress-bar-sm">
+              <div class="progress-bar-sm-fill" style="width:${s.pct}%;background:${barColor}"></div>
+            </div>
+            <span class="progress-pct" style="color:${barColor}">${s.pct}%</span>
+          </div>
+        </td>
+        <td><span class="kpi-badge ${badgeClass}">${badgeText}</span></td>
+      </tr>`;
+  }).join('');
+}
+renderShipmentTable();
+
+// ─── CHARTS ───
+const chartInstances = {};
+
+function renderChartsForTab(tab) {
+  if (tab === 'production') {
+    if (!chartInstances.productionTrend) renderProductionTrendChart();
+  } else if (tab === 'quality') {
+    if (!chartInstances.defectPie) renderDefectPieChart();
+    if (!chartInstances.defectTrend) renderDefectTrendChart();
+  } else if (tab === 'facility') {
+    if (!chartInstances.oeeBar) renderOEEBarChart();
+  } else if (tab === 'shipment') {
+    if (!chartInstances.customerBar) renderCustomerBarChart();
+  }
+}
+
+// Default chart options
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  animation: { duration: 800, easing: 'easeOutQuart' }
+};
+
+function gridLines(alpha) {
+  return { color: `rgba(36,52,89,${alpha || 0.8})`, drawBorder: false };
+}
+function tickStyle() {
+  return { color: '#4d6080', font: { size: 11, family: "'Noto Sans KR'" } };
+}
+
+// Production Trend Chart (Line)
+function renderProductionTrendChart() {
+  const ctx = document.getElementById('productionTrendChart').getContext('2d');
+  const labels = ['5/14','5/15','5/16','5/17','5/18','5/19','5/20'];
+  chartInstances.productionTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '실제 생산량',
+          data: [118, 124, 121, 129, 132, 125, 127],
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#00d4ff',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
+        },
+        {
+          label: '목표',
+          data: [130,130,130,130,130,130,130],
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderDash: [6,4],
+          fill: false,
+          tension: 0,
+          pointRadius: 0,
+          borderWidth: 1.5,
+        },
+        {
+          label: '전주 동기',
+          data: [112, 116, 115, 120, 122, 118, 120],
+          borderColor: 'rgba(139,92,246,0.7)',
+          borderDash: [3,3],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 3,
+          borderWidth: 1.5,
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: gridLines(0.4), ticks: tickStyle() },
+        y: {
+          grid: gridLines(0.4), ticks: { ...tickStyle(), callback: v => v + ' LOT' },
+          min: 100, max: 145,
+        }
+      }
+    }
+  });
+}
+
+// Defect Pie Chart
+function renderDefectPieChart() {
+  const ctx = document.getElementById('defectPieChart').getContext('2d');
+  chartInstances.defectPie = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['치수불량','표면불량','물성미달','NDT불합격'],
+      datasets: [{
+        data: [38, 26, 21, 15],
+        backgroundColor: ['#ff6b35','#ff3b3b','#ffd700','#8b5cf6'],
+        borderColor: '#1a2744',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a2744',
+          borderColor: '#243459',
+          borderWidth: 1,
+          titleColor: '#e8edf8',
+          bodyColor: '#8fa3c7',
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` }
+        }
+      },
+      animation: { duration: 900, easing: 'easeOutQuart' }
+    }
+  });
+}
+
+// Defect Trend Line
+function renderDefectTrendChart() {
+  const ctx = document.getElementById('defectTrendChart').getContext('2d');
+  const months = ['12월','1월','2월','3월','4월','5월'];
+  chartInstances.defectTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: '가열',
+          data: [3.2, 2.9, 3.1, 2.7, 2.4, 2.1],
+          borderColor: '#ff6b35', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2,
+        },
+        {
+          label: '단조',
+          data: [4.1, 3.8, 4.2, 3.9, 3.5, 3.2],
+          borderColor: '#ff3b3b', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2,
+        },
+        {
+          label: '열처리',
+          data: [2.8, 2.5, 2.3, 2.1, 1.9, 1.6],
+          borderColor: '#00d68f', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2,
+        },
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { display: false }, ticks: tickStyle() },
+        y: { grid: gridLines(0.3), ticks: { ...tickStyle(), callback: v => v + '%' }, min: 0, max: 6 }
+      }
+    }
+  });
+}
+
+// OEE Bar Chart
+function renderOEEBarChart() {
+  const ctx = document.getElementById('oeeBarChart').getContext('2d');
+  chartInstances.oeeBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['가열로#1','가열로#2','열처리#1','프레스#1','프레스#3','측정기#1'],
+      datasets: [{
+        label: 'OEE',
+        data: [88.2, 74.5, 85.6, 91.2, 78.3, 96.1],
+        backgroundColor: [
+          'rgba(0,212,255,0.7)',
+          'rgba(255,107,53,0.7)',
+          'rgba(0,212,255,0.7)',
+          'rgba(0,212,255,0.7)',
+          'rgba(255,107,53,0.7)',
+          'rgba(0,214,143,0.7)',
+        ],
+        borderColor: [
+          '#00d4ff','#ff6b35','#00d4ff','#00d4ff','#ff6b35','#00d68f'
+        ],
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { display: false }, ticks: tickStyle() },
+        y: { grid: gridLines(0.4), ticks: { ...tickStyle(), callback: v => v + '%' }, min: 60, max: 100 }
+      }
+    }
+  });
+}
+
+// Customer Bar Chart
+function renderCustomerBarChart() {
+  const ctx = document.getElementById('customerBarChart').getContext('2d');
+  chartInstances.customerBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['현대중공업','두산에너빌리티','삼성중공업','한화오션','HD현대','LS일렉트릭'],
+      datasets: [
+        {
+          label: '납기 완료',
+          data: [14, 11, 8, 7, 5, 2],
+          backgroundColor: 'rgba(0,214,143,0.7)',
+          borderColor: '#00d68f', borderWidth: 1.5, borderRadius: 4,
+          stack: 'a',
+        },
+        {
+          label: '진행 중',
+          data: [2, 2, 1, 1, 1, 1],
+          backgroundColor: 'rgba(0,212,255,0.5)',
+          borderColor: '#00d4ff', borderWidth: 1.5, borderRadius: 4,
+          stack: 'a',
+        },
+        {
+          label: '리스크',
+          data: [1, 1, 1, 0, 0, 0],
+          backgroundColor: 'rgba(255,107,53,0.7)',
+          borderColor: '#ff6b35', borderWidth: 1.5, borderRadius: 4,
+          stack: 'a',
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#8fa3c7', font: { size: 11, family: "'Noto Sans KR'" }, boxWidth: 12, padding: 12 },
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: tickStyle(), stacked: true },
+        y: { grid: gridLines(0.4), ticks: tickStyle(), stacked: true }
+      }
+    }
+  });
+}
+
+// ─── INIT: render production tab charts ───
+renderProductionTrendChart();
+
+// ─── REFRESH ───
+function refreshAll() {
+  // Destroy and re-render all initialised charts
+  Object.values(chartInstances).forEach(c => c.destroy());
+  for (const k in chartInstances) delete chartInstances[k];
+  // Re-render currently active tab
+  const activeTab = document.querySelector('.tab-btn.active');
+  const tabMap = { '📊 생산현황':'production','🔬 품질현황':'quality','⚙️ 설비현황':'facility','🚚 출하현황':'shipment' };
+  const currentTab = tabMap[activeTab.textContent.trim()] || 'production';
+  renderChartsForTab(currentTab);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "taewung-ai-mes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "㈜태웅 제조AI 특화 스마트공장 MES",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:migrate": "pnpm --filter @taewung/api db:migrate",
+    "db:seed": "pnpm --filter @taewung/api db:seed",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.0",
+    "rimraf": "^5.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
