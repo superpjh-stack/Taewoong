@@ -10,7 +10,7 @@ import { csrfOriginGuard } from './middleware/csrf.js'
 export function createApp() {
   const app = express()
 
-  app.use(helmet())
+  app.use(helmet({ contentSecurityPolicy: false }))
   app.use(cors({
     origin: process.env['CORS_ORIGINS']?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
