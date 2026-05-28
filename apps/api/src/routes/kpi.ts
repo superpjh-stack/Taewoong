@@ -286,7 +286,7 @@ router.post('/targets', requirePermission('kpi:write'), async (req, res) => {
 
   const [row] = await sql`
     INSERT INTO kpi_targets (kpi_type, metric_key, target_value, unit, effective_from, effective_to, created_by)
-    VALUES (${kpi_type}, ${metric_key}, ${target_value}, ${unit}, ${effective_from}, ${effective_to ?? null}, ${(req as any).user?.sub ?? 1})
+    VALUES (${kpi_type}, ${metric_key}, ${target_value}, ${unit}, ${effective_from}, ${effective_to ?? null}, ${req.user!.id})
     RETURNING *
   `
   res.json({ success: true, data: row })

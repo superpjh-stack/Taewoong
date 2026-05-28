@@ -14,3 +14,5 @@ A second related issue: listAuditLogs SELECTs the `payload` JSONB column (before
 **How to apply:** When reviewing any new admin/RBAC/process write endpoint, flag missing `audit_logs` INSERT as Critical. Recommend a shared `recordAudit()` helper.
 
 **UPDATE 2026-05-21 (re-verified):** still NO INSERT into audit_logs anywhere in admin-service.ts — gap stands. The secondary `payload` exposure is RESOLVED: listAuditLogs now SELECTs only id/user_id/action/resource/resource_id/ip_address/created_at, not `payload`.
+
+**UPDATE 2026-05-28 (PARTIALLY RESOLVED):** `apps/api/src/middleware/audit.ts` now exists and DOES INSERT into audit_logs on `res.on('finish')` for 2xx/3xx responses with a redacting sanitizeBody. It is applied via `auditLog('...')` in admin.ts ONLY to: POST /users, PATCH /users/:id, POST /users (create), PATCH /settings. STILL UNINSTRUMENTED admin writes: POST/DELETE /users/:id/roles (role assignment), POST /roles, PUT /roles/:id/permissions, all code-master writes, all notification-rules writes (POST/PATCH/DELETE). RBAC role/permission changes — the most compliance-sensitive — are NOT audited. So the core gap is narrowed but not closed.

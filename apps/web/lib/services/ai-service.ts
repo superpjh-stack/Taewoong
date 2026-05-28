@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 export type AgentType = 'incoming' | 'shipping' | 'integrated' | 'heating_opt'
@@ -159,13 +160,6 @@ export interface DueDateRiskAnalysis {
 
 // ── Service functions ─────────────────────────────────────
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 export async function queryAgent(data: AiQueryData): Promise<AiAgentResponse> {
   const res = await apiClient.post<AiAgentResponse>('/ai-agents/query', data)

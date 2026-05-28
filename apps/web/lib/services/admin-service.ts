@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 export interface AdminUser {
@@ -66,13 +67,6 @@ export interface SystemSettings {
   [key: string]: unknown
 }
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 export async function listUsers(params: { page?: number; limit?: number; search?: string; is_active?: boolean } = {}) {
   const res = await apiClient.get<AdminUser[]>(`/admin/users${toQS(params as Record<string, unknown>)}`)
