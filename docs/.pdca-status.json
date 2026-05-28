@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-05-28T00:00:00.000Z",
+  "lastUpdated": "2026-05-28T02:43:06.545Z",
   "activeFeatures": [
     "phase-4-api",
     "phase-5-design-system",
@@ -148,9 +148,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-05-20T08:01:17.978Z",
-        "lastUpdated": "2026-05-25T12:58:28.707Z"
+        "lastUpdated": "2026-05-28T02:43:06.545Z"
       },
-      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\apps\\api\\src\\services\\auth-service.ts"
+      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\.claude\\worktrees\\phase-7-analysis\\apps\\api\\src\\app.ts"
     },
     "routes": {
       "phase": "do",
@@ -161,9 +161,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-05-20T08:02:27.777Z",
-        "lastUpdated": "2026-05-25T02:27:44.444Z"
+        "lastUpdated": "2026-05-28T02:19:39.525Z"
       },
-      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\apps\\api\\src\\routes\\admin.ts"
+      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\.claude\\worktrees\\phase-7-analysis\\apps\\api\\src\\routes\\admin.ts"
     },
     "packages": {
       "phase": "do",
@@ -200,9 +200,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-05-21T01:16:28.997Z",
-        "lastUpdated": "2026-05-25T08:36:21.523Z"
+        "lastUpdated": "2026-05-28T02:19:57.914Z"
       },
-      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\apps\\web\\middleware.ts"
+      "lastFile": "C:\\gerardo\\01 SmallSF\\TaeWoong-AI-MES\\.claude\\worktrees\\phase-7-analysis\\apps\\web\\lib\\services\\_utils.ts"
     },
     "[id]": {
       "phase": "do",
@@ -805,7 +805,7 @@
   "session": {
     "startedAt": "2026-05-20T03:06:18.634Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-05-25T12:58:28.707Z"
+    "lastActivity": "2026-05-28T02:43:06.545Z"
   },
   "history": [
     {
@@ -3450,6 +3450,66 @@
     },
     {
       "timestamp": "2026-05-25T12:58:28.707Z",
+      "feature": "api",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:18:52.290Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:11.028Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:18.188Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:23.028Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:27.361Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:31.852Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:35.573Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:39.525Z",
+      "feature": "routes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:19:57.914Z",
+      "feature": "web",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-28T02:43:06.545Z",
       "feature": "api",
       "phase": "do",
       "action": "updated"
