@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 export interface Shipment {
@@ -88,13 +89,6 @@ export interface CreateShipmentData {
   due_date?: string
 }
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 export async function listShipments(params: ShipmentFilter = {}) {
   const res = await apiClient.get<Shipment[]>(`/shipments${toQS(params as Record<string, unknown>)}`)

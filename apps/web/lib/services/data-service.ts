@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 // ===== 공통 =====
@@ -9,13 +10,6 @@ export interface DataServicePagination {
   totalPages: number
 }
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 // ===== FR-01: 데이터통합관리 =====
 

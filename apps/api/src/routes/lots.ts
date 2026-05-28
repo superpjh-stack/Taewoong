@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { authenticate } from '../middleware/auth.js'
 import { requirePermission } from '../middleware/rbac.js'
 import { sql } from '../db/client.js'
+import { asyncHandler, error, ErrorCode } from '../lib/response.js'
 import * as ctrl from '../controllers/lot-controller.js'
 
 const router = Router()
@@ -13,14 +14,14 @@ router.get('/:id(\\d+)/lineage', requirePermission('process:read'), ctrl.getLine
 router.get('/:id(\\d+)/history', requirePermission('process:read'), ctrl.getHistory)
 
 // ── 데이터관리용 LOT 상세 (공정이력 + 품질 + 출하) ───────────────────────────
-router.get('/:id(\\d+)/detail', requirePermission('process:read'), async (req, res) => {
+router.get('/:id(\\d+)/detail', requirePermission('process:read'), asyncHandler(async (req, res) => {
   const id = Number(req.params.id)
   const [lot] = await sql`
     SELECT l.*, COALESCE(rm.heat_no_supplier, '') AS heat_no
     FROM lots l LEFT JOIN raw_materials rm ON rm.id = l.raw_material_id
     WHERE l.id = ${id} AND l.deleted_at IS NULL
   `
-  if (!lot) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'LOT를 찾을 수 없습니다' } }); return }
+  if (!lot) { error(res, ErrorCode.NOT_FOUND, 'LOT를 찾을 수 없습니다', 404); return }
 
   const processHistory = await sql`
     SELECT
@@ -65,7 +66,7 @@ router.get('/:id(\\d+)/detail', requirePermission('process:read'), async (req, r
       shipment: shipment ?? null,
     },
   })
-})
+}))
 
 // ── LOT 품질 검사 결과 목록 ─────────────────────────────────────────────────
 router.get('/:id(\\d+)/inspections', requirePermission('process:read'), async (req, res) => {
@@ -108,7 +109,7 @@ router.get('/:id(\\d+)/process-timeline', requirePermission('process:read'), asy
       ORDER BY pr.started_at
     `
     res.json({ success: true, data: { lot_id: id, timeline } })
-  } catch (e) { res.status(500).json({ success: false, error: { code: 'INTERNAL', message: String(e) } }) }
+  } catch { error(res, ErrorCode.INTERNAL_ERROR, '서버 오류가 발생했습니다', 500) }
 })
 
 router.get('/:id(\\d+)', requirePermission('process:read'), ctrl.getById)

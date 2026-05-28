@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient, type ApiClientLike } from '@/lib/api-client'
 
 export interface HeatingProcess {
@@ -179,13 +180,6 @@ export interface HeatingOptimizeResult {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function toQS(params: object): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 // ─── Equipment ───────────────────────────────────────────────────────────────
 

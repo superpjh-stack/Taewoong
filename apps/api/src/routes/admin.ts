@@ -101,7 +101,7 @@ router.patch('/users/:id', auditLog('admin.user.update'), async (req, res) => {
 })
 
 // POST /admin/users/:id/roles
-router.post('/users/:id/roles', async (req, res) => {
+router.post('/users/:id/roles', auditLog('admin.role.assign'), async (req, res) => {
   const userId = Number(req.params['id'])
   if (!Number.isInteger(userId) || userId < 1) {
     error(res, ErrorCode.VALIDATION_ERROR, '유효하지 않은 사용자 ID입니다', 400)
@@ -124,7 +124,7 @@ router.post('/users/:id/roles', async (req, res) => {
 })
 
 // DELETE /admin/users/:id/roles/:roleId
-router.delete('/users/:id/roles/:roleId', async (req, res) => {
+router.delete('/users/:id/roles/:roleId', auditLog('admin.role.remove'), async (req, res) => {
   const userId = Number(req.params['id'])
   const roleId = Number(req.params['roleId'])
 
@@ -156,7 +156,7 @@ router.get('/roles', async (_req, res) => {
 })
 
 // POST /admin/roles
-router.post('/roles', async (req, res) => {
+router.post('/roles', auditLog('admin.role.create'), async (req, res) => {
   const parsed = createRoleSchema.safeParse(req.body)
   if (!parsed.success) {
     error(res, ErrorCode.VALIDATION_ERROR, '입력값이 올바르지 않습니다', 400, parsed.error.issues)
@@ -174,7 +174,7 @@ router.post('/roles', async (req, res) => {
 })
 
 // PUT /admin/roles/:id/permissions
-router.put('/roles/:id/permissions', async (req, res) => {
+router.put('/roles/:id/permissions', auditLog('admin.permission.update'), async (req, res) => {
   const roleId = Number(req.params['id'])
   if (!Number.isInteger(roleId) || roleId < 1) {
     error(res, ErrorCode.VALIDATION_ERROR, '유효하지 않은 역할 ID입니다', 400)

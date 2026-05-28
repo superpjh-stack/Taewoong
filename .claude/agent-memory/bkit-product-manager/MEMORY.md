@@ -2,3 +2,4 @@
 - [㈜태웅 MES - 가열공정·검사출하 기획](project_taewung_mes.md) — 모듈3(가열공정관리)+모듈4(검사출하관리), 가열로 4존 정의, AI 신뢰도 점수, 납기 리스크 지수 공식 포함
 - [User Profile](user_profile.md) — MES 기획자 역할, 한국어 문서 작성, 제조업 도메인 전문가
 - [Project Context - M5~M10](project_taewoong.md) — 공정/데이터/AI/KPI/사용자/기준정보 6개 모듈 기획, OEE·재가열률 등 KPI 공식, 데이터 보존 정책
+- [Phase 8 코드 리뷰 기획](project_phase8_review.md) — Phase 7 잔여 갭(helmet CSP, auditLog) + 전체 코드 리뷰 계획, Match Rate 95%→≥90% 목표

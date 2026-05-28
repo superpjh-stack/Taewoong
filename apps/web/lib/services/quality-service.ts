@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 export interface QualityInspection {
@@ -32,13 +33,6 @@ export interface UpdateJudgementData {
   rejection_reason?: string
 }
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 export async function listInspections(params: QualityFilter = {}) {
   const res = await apiClient.get<QualityInspection[]>(`/quality-inspections${toQS(params as Record<string, unknown>)}`)

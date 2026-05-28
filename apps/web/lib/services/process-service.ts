@@ -1,3 +1,4 @@
+import { toQS } from './_utils.js'
 import { apiClient } from '@/lib/api-client'
 
 export interface ProcessResult {
@@ -104,13 +105,6 @@ export interface EquipmentEffRow {
   oee_rate: number
 }
 
-function toQS(params: Record<string, unknown>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') q.append(k, String(v))
-  }
-  return q.toString() ? `?${q.toString()}` : ''
-}
 
 export async function listProcessResults(params: ProcessFilter = {}) {
   const res = await apiClient.get<ProcessResult[]>(`/process-results${toQS(params as Record<string, unknown>)}`)
